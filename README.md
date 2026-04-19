@@ -40,6 +40,8 @@ docker compose up -d mongo
 
 - `GET /` devuelve un estado básico.
 - `GET /api/health/mongo` comprueba conexión con MongoDB.
+- `POST /api/auth/register` registra usuario.
+- `POST /api/auth/login` inicia sesión.
 
 ## Como comprobar MongoDB
 
@@ -62,3 +64,10 @@ Invoke-RestMethod http://localhost:5000/api/health/mongo
 ```
 
 Si todo va bien, devuelve `status: ok`.
+
+## Registro y login (simple)
+
+1. Levanta MongoDB y backend.
+2. Arranca frontend con `npm run dev` dentro de `frontend`.
+3. En la UI puedes registrarte o loguearte.
+4. Al autenticarte verás la pantalla con `Barajas` y un botón de cerrar sesión.
