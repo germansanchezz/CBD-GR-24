@@ -58,8 +58,7 @@ dotnet run --project .\backend\CBD.Api\CBD.Api.csproj
 3. Prueba el healthcheck:
 
 ```powershell
-Invoke-RestMethod http://localhost:xxxx/api/health/mongo
+Invoke-RestMethod http://localhost:5000/api/health/mongo
 ```
 
-Reemplaza `xxxx` por el puerto HTTP que imprime `dotnet run` en consola.
 Si todo va bien, devuelve `status: ok`.
