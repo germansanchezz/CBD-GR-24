@@ -65,6 +65,20 @@ Invoke-RestMethod http://localhost:5000/api/health/mongo
 
 Si todo va bien, devuelve `status: ok`.
 
+## MongoDB Compass
+
+Si quieres ver los datos visualmente, usa MongoDB Compass con esta cadena de conexión:
+
+```text
+mongodb://localhost:27017
+```
+
+Pasos:
+
+1. Abre MongoDB Compass.
+2. Pega `mongodb://localhost:27017` en la pantalla de conexión.
+3. Conecta y entra en la base `pokemon_cards`.
+
 ## Registro y login (simple)
 
 1. Levanta MongoDB y backend.
