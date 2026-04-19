@@ -1,0 +1,8 @@
+**/bin
+**/obj
+**/dist
+**/node_modules
+**/*.tsbuildinfo
+.git
+.vs
+README.md

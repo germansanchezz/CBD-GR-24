@@ -6,7 +6,7 @@ Monorepo base para el proyecto de barajas Pokemon TCG.
 
 - `backend/CBD.Api`: API en .NET 8 con MongoDB.
 - `frontend`: app React + Vite + TypeScript.
-- `docker-compose.yml`: MongoDB local para desarrollo.
+- `docker-compose.yml`: MongoDB local y orquestación Docker del stack.
 
 ## Requisitos
 
@@ -34,6 +34,12 @@ MongoDB local:
 
 ```powershell
 docker compose up -d mongo
+```
+
+Todo el stack con Docker:
+
+```powershell
+docker compose up -d --build
 ```
 
 ## API
@@ -78,6 +84,14 @@ Pasos:
 1. Abre MongoDB Compass.
 2. Pega `mongodb://localhost:27017` en la pantalla de conexión.
 3. Conecta y entra en la base `pokemon_cards`.
+
+## Docker
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:5000`
+- MongoDB: `mongodb://localhost:27017`
+
+El frontend ya se construye apuntando a `http://localhost:5000`, y la API usa `mongodb://mongo:27017` dentro de Docker.
 
 ## Registro y login (simple)
 

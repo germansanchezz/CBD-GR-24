@@ -8,5 +8,32 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  backend:
+    build:
+      context: .
+      dockerfile: backend/CBD.Api/Dockerfile
+    container_name: cbd-backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    environment:
+      MongoDb__ConnectionString: mongodb://mongo:27017
+      MongoDb__DatabaseName: pokemon_cards
+    ports:
+      - "5000:8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:5000
+    container_name: cbd-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
 volumes:
   mongo_data:
