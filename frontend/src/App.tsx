@@ -61,56 +61,71 @@ export default function App() {
 
   if (currentUser) {
     return (
-      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', position: 'relative' }}>
-        <button
-          type="button"
-          onClick={() => setCurrentUser(null)}
-          style={{ position: 'absolute', top: '16px', right: '16px' }}
-        >
+      <main className="app-shell deck-shell">
+        <button type="button" className="logout-button" onClick={() => setCurrentUser(null)}>
           Cerrar sesion
         </button>
-        <h1>Barajas</h1>
+
+        <section className="hero-card hero-card-center">
+          <p className="eyebrow">Pokemon Deck Builder</p>
+          <h1>Barajas</h1>
+          <p className="hero-copy">Bienvenido, {currentUser.displayName || currentUser.email}.</p>
+        </section>
       </main>
     );
   }
 
   return (
-    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '12px', minWidth: '280px' }}>
+    <main className="app-shell auth-shell">
+      <section className="hero-card">
+        <p className="eyebrow">Pokemon TCG</p>
         <h1>{mode === 'login' ? 'Login' : 'Registro'}</h1>
+        <p className="hero-copy">Acceso simple para entrar en la pantalla de barajas.</p>
+      </section>
 
+      <form className="auth-card" onSubmit={handleSubmit}>
         {mode === 'register' && (
-          <input
-            type="text"
-            placeholder="Nombre"
-            value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
-            required
-          />
+          <label className="field">
+            <span>Nombre</span>
+            <input
+              type="text"
+              placeholder="Tu nombre"
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              required
+            />
+          </label>
         )}
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
+        <label className="field">
+          <span>Email</span>
+          <input
+            type="email"
+            placeholder="tu@email.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
+        </label>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-        />
+        <label className="field">
+          <span>Password</span>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+        </label>
 
-        <button type="submit" disabled={isSubmitting}>
+        <button type="submit" className="primary-button" disabled={isSubmitting}>
           {isSubmitting ? 'Enviando...' : mode === 'login' ? 'Entrar' : 'Registrarme'}
         </button>
 
         <button
           type="button"
+          className="secondary-button"
           onClick={() => {
             setMode(mode === 'login' ? 'register' : 'login');
             setErrorMessage('');
@@ -119,7 +134,7 @@ export default function App() {
           {mode === 'login' ? 'Ir a registro' : 'Ir a login'}
         </button>
 
-        {errorMessage && <p>{errorMessage}</p>}
+        {errorMessage && <p className="error-message">{errorMessage}</p>}
       </form>
     </main>
   );
