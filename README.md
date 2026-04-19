@@ -1,1 +1,65 @@
-"# CBD-GR-24" 
+# CBD-GR-24
+
+Monorepo base para el proyecto de barajas Pokemon TCG.
+
+## Estructura
+
+- `backend/CBD.Api`: API en .NET 8 con MongoDB.
+- `frontend`: app React + Vite + TypeScript.
+- `docker-compose.yml`: MongoDB local para desarrollo.
+
+## Requisitos
+
+- .NET 8 SDK.
+- Node.js 22 o superior.
+- Docker, si quieres levantar MongoDB con compose.
+
+## Arranque
+
+Backend:
+
+```powershell
+dotnet run --project .\backend\CBD.Api\CBD.Api.csproj
+```
+
+Frontend:
+
+```powershell
+Set-Location .\frontend
+npm install
+npm run dev
+```
+
+MongoDB local:
+
+```powershell
+docker compose up -d mongo
+```
+
+## API
+
+- `GET /` devuelve un estado básico.
+- `GET /api/health/mongo` comprueba conexión con MongoDB.
+
+## Como comprobar MongoDB
+
+1. Levanta MongoDB:
+
+```powershell
+docker compose up -d mongo
+```
+
+2. Arranca la API:
+
+```powershell
+dotnet run --project .\backend\CBD.Api\CBD.Api.csproj
+```
+
+3. Prueba el healthcheck:
+
+```powershell
+Invoke-RestMethod http://localhost:xxxx/api/health/mongo
+```
+
+Reemplaza `xxxx` por el puerto HTTP que imprime `dotnet run` en consola.
+Si todo va bien, devuelve `status: ok`.
