@@ -1,5 +1,7 @@
 using CBD.Api.Models;
 using CBD.Api.Options;
+using CBD.Api.Contracts.Decks;
+using CBD.Api.Validation;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
@@ -49,7 +51,7 @@ app.MapGet("/api/health/mongo", async (IMongoClient mongoClient, IOptions<MongoD
 
 var decks = app.MapGroup("/api/decks");
 
-decks.MapGet("", async (string ownerUserId, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+decks.MapGet("", async (string? ownerUserId, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
 {
     var database = mongoClient.GetDatabase(options.Value.DatabaseName);
     var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
@@ -92,20 +94,16 @@ decks.MapGet("/{deckId}", async (string deckId, string? ownerUserId, IMongoClien
 
 decks.MapPost("", async (CreateDeckRequest request, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
 {
-    var name = request.Name.Trim();
-    var description = request.Description?.Trim() ?? string.Empty;
-    var ownerUserId = request.OwnerUserId.Trim();
-
-    if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(ownerUserId))
+    if (!DeckRequestValidator.TryValidateCreate(request, out var createErrorMessage))
     {
-        return Results.BadRequest(new { message = "Name y ownerUserId son obligatorios." });
+        return Results.BadRequest(new { message = createErrorMessage });
     }
 
     var deck = new Deck
     {
-        Name = name,
-        Description = description,
-        OwnerUserId = ownerUserId,
+        Name = request.Name.Trim(),
+        Description = request.Description?.Trim() ?? string.Empty,
+        OwnerUserId = request.OwnerUserId.Trim(),
         Cards = [],
         CreatedAtUtc = DateTime.UtcNow,
         UpdatedAtUtc = DateTime.UtcNow
@@ -124,6 +122,11 @@ decks.MapPut("/{deckId}", async (string deckId, UpdateDeckRequest request, IMong
     if (!ObjectId.TryParse(deckId, out _))
     {
         return Results.BadRequest(new { message = "deckId no es valido." });
+    }
+
+    if (!DeckRequestValidator.TryValidateUpdate(request, out var updateErrorMessage))
+    {
+        return Results.BadRequest(new { message = updateErrorMessage });
     }
 
     var database = mongoClient.GetDatabase(options.Value.DatabaseName);
@@ -230,5 +233,3 @@ static string ComputeSha256(string value)
 public sealed record RegisterRequest(string Email, string Password, string DisplayName);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record AuthResponse(string? Id, string Email, string DisplayName);
-public sealed record CreateDeckRequest(string Name, string? Description, string OwnerUserId);
-public sealed record UpdateDeckRequest(string Name, string? Description);
