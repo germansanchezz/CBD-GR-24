@@ -47,6 +47,120 @@ app.MapGet("/api/health/mongo", async (IMongoClient mongoClient, IOptions<MongoD
     }
 });
 
+var decks = app.MapGroup("/api/decks");
+
+decks.MapGet("", async (string ownerUserId, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+{
+    var database = mongoClient.GetDatabase(options.Value.DatabaseName);
+    var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
+
+    var filter = string.IsNullOrWhiteSpace(ownerUserId)
+        ? Builders<Deck>.Filter.Empty
+        : Builders<Deck>.Filter.Eq(deck => deck.OwnerUserId, ownerUserId.Trim());
+
+    var decks = await decksCollection
+        .Find(filter)
+        .SortByDescending(deck => deck.UpdatedAtUtc)
+        .ToListAsync();
+
+    return Results.Ok(decks);
+});
+
+decks.MapGet("/{deckId}", async (string deckId, string? ownerUserId, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+{
+    if (!ObjectId.TryParse(deckId, out _))
+    {
+        return Results.BadRequest(new { message = "deckId no es valido." });
+    }
+
+    var database = mongoClient.GetDatabase(options.Value.DatabaseName);
+    var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
+
+    var filter = Builders<Deck>.Filter.Eq(deck => deck.Id, deckId);
+
+    if (!string.IsNullOrWhiteSpace(ownerUserId))
+    {
+        filter &= Builders<Deck>.Filter.Eq(deck => deck.OwnerUserId, ownerUserId.Trim());
+    }
+
+    var deck = await decksCollection.Find(filter).FirstOrDefaultAsync();
+
+    return deck is null
+        ? Results.NotFound(new { message = "Baraja no encontrada." })
+        : Results.Ok(deck);
+});
+
+decks.MapPost("", async (CreateDeckRequest request, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+{
+    var name = request.Name.Trim();
+    var description = request.Description?.Trim() ?? string.Empty;
+    var ownerUserId = request.OwnerUserId.Trim();
+
+    if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(ownerUserId))
+    {
+        return Results.BadRequest(new { message = "Name y ownerUserId son obligatorios." });
+    }
+
+    var deck = new Deck
+    {
+        Name = name,
+        Description = description,
+        OwnerUserId = ownerUserId,
+        Cards = [],
+        CreatedAtUtc = DateTime.UtcNow,
+        UpdatedAtUtc = DateTime.UtcNow
+    };
+
+    var database = mongoClient.GetDatabase(options.Value.DatabaseName);
+    var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
+
+    await decksCollection.InsertOneAsync(deck);
+
+    return Results.Created($"/api/decks/{deck.Id}", deck);
+});
+
+decks.MapPut("/{deckId}", async (string deckId, UpdateDeckRequest request, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+{
+    if (!ObjectId.TryParse(deckId, out _))
+    {
+        return Results.BadRequest(new { message = "deckId no es valido." });
+    }
+
+    var database = mongoClient.GetDatabase(options.Value.DatabaseName);
+    var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
+
+    var existingDeck = await decksCollection.Find(deck => deck.Id == deckId).FirstOrDefaultAsync();
+    if (existingDeck is null)
+    {
+        return Results.NotFound(new { message = "Baraja no encontrada." });
+    }
+
+    existingDeck.Name = request.Name.Trim();
+    existingDeck.Description = request.Description?.Trim() ?? string.Empty;
+    existingDeck.UpdatedAtUtc = DateTime.UtcNow;
+
+    await decksCollection.ReplaceOneAsync(deck => deck.Id == deckId, existingDeck);
+
+    return Results.Ok(existingDeck);
+});
+
+decks.MapDelete("/{deckId}", async (string deckId, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+{
+    if (!ObjectId.TryParse(deckId, out _))
+    {
+        return Results.BadRequest(new { message = "deckId no es valido." });
+    }
+
+    var database = mongoClient.GetDatabase(options.Value.DatabaseName);
+    var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
+
+    var result = await decksCollection.DeleteOneAsync(deck => deck.Id == deckId);
+
+    return result.DeletedCount == 0
+        ? Results.NotFound(new { message = "Baraja no encontrada." })
+        : Results.NoContent();
+});
+
 var auth = app.MapGroup("/api/auth");
 
 auth.MapPost("/register", async (RegisterRequest request, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
@@ -116,3 +230,5 @@ static string ComputeSha256(string value)
 public sealed record RegisterRequest(string Email, string Password, string DisplayName);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record AuthResponse(string? Id, string Email, string DisplayName);
+public sealed record CreateDeckRequest(string Name, string? Description, string OwnerUserId);
+public sealed record UpdateDeckRequest(string Name, string? Description);
