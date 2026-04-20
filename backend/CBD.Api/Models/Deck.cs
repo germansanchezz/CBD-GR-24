@@ -16,7 +16,7 @@ public sealed class Deck
     [BsonRepresentation(BsonType.ObjectId)]
     public string OwnerUserId { get; set; } = string.Empty;
 
-    public int CardCount { get; set; }
+    public List<DeckCard> Cards { get; set; } = new();
 
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
