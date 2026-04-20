@@ -1,3 +1,3 @@
 namespace CBD.Api.Contracts.Decks;
 
-public sealed record CreateDeckRequest(string Name, string? Description, string OwnerUserId);
+public sealed record CreateDeckRequest(string Name, string? Description);

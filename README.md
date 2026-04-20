@@ -48,6 +48,9 @@ docker compose up -d --build
 - `GET /api/health/mongo` comprueba conexión con MongoDB.
 - `POST /api/auth/register` registra usuario.
 - `POST /api/auth/login` inicia sesión.
+- `GET/POST/PUT/DELETE /api/decks` CRUD de barajas del usuario autenticado.
+
+Para usar `/api/decks`, envia la cabecera `X-User-Id` con el `id` devuelto por login/registro.
 
 ## Como comprobar MongoDB
 

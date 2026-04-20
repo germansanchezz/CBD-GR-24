@@ -51,14 +51,17 @@ app.MapGet("/api/health/mongo", async (IMongoClient mongoClient, IOptions<MongoD
 
 var decks = app.MapGroup("/api/decks");
 
-decks.MapGet("", async (string? ownerUserId, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+decks.MapGet("", async (HttpContext httpContext, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
 {
+    if (!TryGetUserId(httpContext, out var userId, out var authError))
+    {
+        return authError;
+    }
+
     var database = mongoClient.GetDatabase(options.Value.DatabaseName);
     var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
 
-    var filter = string.IsNullOrWhiteSpace(ownerUserId)
-        ? Builders<Deck>.Filter.Empty
-        : Builders<Deck>.Filter.Eq(deck => deck.OwnerUserId, ownerUserId.Trim());
+    var filter = Builders<Deck>.Filter.Eq(deck => deck.OwnerUserId, userId);
 
     var decks = await decksCollection
         .Find(filter)
@@ -68,22 +71,23 @@ decks.MapGet("", async (string? ownerUserId, IMongoClient mongoClient, IOptions<
     return Results.Ok(decks);
 });
 
-decks.MapGet("/{deckId}", async (string deckId, string? ownerUserId, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+decks.MapGet("/{deckId}", async (string deckId, HttpContext httpContext, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
 {
     if (!ObjectId.TryParse(deckId, out _))
     {
         return Results.BadRequest(new { message = "deckId no es valido." });
     }
 
+    if (!TryGetUserId(httpContext, out var userId, out var authError))
+    {
+        return authError;
+    }
+
     var database = mongoClient.GetDatabase(options.Value.DatabaseName);
     var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
 
-    var filter = Builders<Deck>.Filter.Eq(deck => deck.Id, deckId);
-
-    if (!string.IsNullOrWhiteSpace(ownerUserId))
-    {
-        filter &= Builders<Deck>.Filter.Eq(deck => deck.OwnerUserId, ownerUserId.Trim());
-    }
+    var filter = Builders<Deck>.Filter.Eq(deck => deck.Id, deckId)
+        & Builders<Deck>.Filter.Eq(deck => deck.OwnerUserId, userId);
 
     var deck = await decksCollection.Find(filter).FirstOrDefaultAsync();
 
@@ -92,18 +96,23 @@ decks.MapGet("/{deckId}", async (string deckId, string? ownerUserId, IMongoClien
         : Results.Ok(deck);
 });
 
-decks.MapPost("", async (CreateDeckRequest request, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+decks.MapPost("", async (CreateDeckRequest request, HttpContext httpContext, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
 {
     if (!DeckRequestValidator.TryValidateCreate(request, out var createErrorMessage))
     {
         return Results.BadRequest(new { message = createErrorMessage });
     }
 
+    if (!TryGetUserId(httpContext, out var userId, out var authError))
+    {
+        return authError;
+    }
+
     var deck = new Deck
     {
         Name = request.Name.Trim(),
         Description = request.Description?.Trim() ?? string.Empty,
-        OwnerUserId = request.OwnerUserId.Trim(),
+        OwnerUserId = userId,
         Cards = [],
         CreatedAtUtc = DateTime.UtcNow,
         UpdatedAtUtc = DateTime.UtcNow
@@ -117,7 +126,7 @@ decks.MapPost("", async (CreateDeckRequest request, IMongoClient mongoClient, IO
     return Results.Created($"/api/decks/{deck.Id}", deck);
 });
 
-decks.MapPut("/{deckId}", async (string deckId, UpdateDeckRequest request, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+decks.MapPut("/{deckId}", async (string deckId, UpdateDeckRequest request, HttpContext httpContext, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
 {
     if (!ObjectId.TryParse(deckId, out _))
     {
@@ -129,10 +138,18 @@ decks.MapPut("/{deckId}", async (string deckId, UpdateDeckRequest request, IMong
         return Results.BadRequest(new { message = updateErrorMessage });
     }
 
+    if (!TryGetUserId(httpContext, out var userId, out var authError))
+    {
+        return authError;
+    }
+
     var database = mongoClient.GetDatabase(options.Value.DatabaseName);
     var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
 
-    var existingDeck = await decksCollection.Find(deck => deck.Id == deckId).FirstOrDefaultAsync();
+    var existingDeck = await decksCollection
+        .Find(deck => deck.Id == deckId && deck.OwnerUserId == userId)
+        .FirstOrDefaultAsync();
+
     if (existingDeck is null)
     {
         return Results.NotFound(new { message = "Baraja no encontrada." });
@@ -147,17 +164,22 @@ decks.MapPut("/{deckId}", async (string deckId, UpdateDeckRequest request, IMong
     return Results.Ok(existingDeck);
 });
 
-decks.MapDelete("/{deckId}", async (string deckId, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
+decks.MapDelete("/{deckId}", async (string deckId, HttpContext httpContext, IMongoClient mongoClient, IOptions<MongoDbOptions> options) =>
 {
     if (!ObjectId.TryParse(deckId, out _))
     {
         return Results.BadRequest(new { message = "deckId no es valido." });
     }
 
+    if (!TryGetUserId(httpContext, out var userId, out var authError))
+    {
+        return authError;
+    }
+
     var database = mongoClient.GetDatabase(options.Value.DatabaseName);
     var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
 
-    var result = await decksCollection.DeleteOneAsync(deck => deck.Id == deckId);
+    var result = await decksCollection.DeleteOneAsync(deck => deck.Id == deckId && deck.OwnerUserId == userId);
 
     return result.DeletedCount == 0
         ? Results.NotFound(new { message = "Baraja no encontrada." })
@@ -228,6 +250,28 @@ static string ComputeSha256(string value)
 {
     var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(value));
     return Convert.ToHexString(bytes);
+}
+
+static bool TryGetUserId(HttpContext httpContext, out string userId, out IResult? error)
+{
+    if (!httpContext.Request.Headers.TryGetValue("X-User-Id", out var userIdHeader))
+    {
+        userId = string.Empty;
+        error = Results.Unauthorized();
+        return false;
+    }
+
+    var candidate = userIdHeader.ToString().Trim();
+    if (!ObjectId.TryParse(candidate, out _))
+    {
+        userId = string.Empty;
+        error = Results.BadRequest(new { message = "X-User-Id no es valido." });
+        return false;
+    }
+
+    userId = candidate;
+    error = null;
+    return true;
 }
 
 public sealed record RegisterRequest(string Email, string Password, string DisplayName);
