@@ -45,6 +45,8 @@ input {
 .deck-shell {
   position: relative;
   width: 100%;
+  justify-content: flex-start;
+  padding-top: 96px;
 }
 
 .hero-card,
@@ -67,6 +69,88 @@ input {
   place-items: center;
   text-align: center;
   min-height: 240px;
+}
+
+.deck-page-card {
+  width: min(100%, 960px);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(31, 41, 55, 0.12);
+  backdrop-filter: blur(14px);
+  padding: 28px;
+  display: grid;
+  gap: 22px;
+}
+
+.deck-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.deck-title {
+  margin: 0;
+  font-size: clamp(1.9rem, 4.8vw, 3rem);
+}
+
+.create-deck-form {
+  display: grid;
+  gap: 12px;
+  max-width: 520px;
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(31, 41, 55, 0.1);
+}
+
+.deck-state-text {
+  margin: 0;
+  color: #5b6472;
+  font-size: 0.98rem;
+}
+
+.deck-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.deck-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.deck-list-item h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.deck-list-item p {
+  margin: 6px 0 0;
+  color: #66707e;
+}
+
+.deck-meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(31, 41, 55, 0.08);
+  color: #1f2937;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .eyebrow {
@@ -183,5 +267,23 @@ h1 {
   .logout-button {
     position: static;
     justify-self: end;
+  }
+
+  .deck-shell {
+    padding-top: 32px;
+  }
+
+  .deck-page-card {
+    padding: 20px;
+  }
+
+  .deck-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .deck-list-item {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
