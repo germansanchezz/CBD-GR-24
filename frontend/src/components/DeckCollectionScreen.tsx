@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { createDeck, getDecks } from '../api/client';
 import type { AuthUser, Deck } from '../types';
+import { DeckDetailScreen } from './DeckDetailScreen';
 
 type DeckCollectionScreenProps = {
   currentUser: AuthUser;
@@ -15,9 +16,13 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
   const [newDeckName, setNewDeckName] = useState('');
   const [newDeckDescription, setNewDeckDescription] = useState('');
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
+  const [openedDeckId, setOpenedDeckId] = useState<string | null>(null);
 
   const userId = currentUser.id;
   const userName = currentUser.displayName || currentUser.email;
+  const selectedDeck = openedDeckId
+    ? decks.find((deck) => deck.id === openedDeckId) ?? null
+    : null;
 
   useEffect(() => {
     if (!userId) {
@@ -33,6 +38,13 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
       try {
         const loadedDecks = await getDecks(userId);
         setDecks(loadedDecks);
+        setOpenedDeckId((currentId) => {
+          if (currentId && loadedDecks.some((deck) => deck.id === currentId)) {
+            return currentId;
+          }
+
+          return null;
+        });
       } catch (error) {
         if (error instanceof Error) {
           setDeckErrorMessage(error.message);
@@ -86,6 +98,95 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
     }
   };
 
+  const openDeckDetail = (deckId: string | null) => {
+    setOpenedDeckId(deckId);
+  };
+
+  const renderDeckCollection = () => (
+    <section className="deck-page-card">
+      <header className="deck-header">
+        <div>
+          <p className="eyebrow">Pokemon Deck Builder</p>
+          <h1 className="deck-title">Coleccion de barajas</h1>
+          <p className="hero-copy">Bienvenido, {userName}.</p>
+        </div>
+
+        <button
+          type="button"
+          className="primary-button"
+          onClick={() => {
+            setShowCreateDeckForm((currentValue) => !currentValue);
+            setDeckErrorMessage('');
+          }}
+        >
+          {showCreateDeckForm ? 'Cancelar' : 'Nueva baraja'}
+        </button>
+      </header>
+
+      {showCreateDeckForm && (
+        <form className="create-deck-form" onSubmit={handleCreateDeck}>
+          <label className="field">
+            <span>Nombre de la baraja</span>
+            <input
+              type="text"
+              placeholder="Ej: Pikachu agresivo"
+              value={newDeckName}
+              onChange={(event) => setNewDeckName(event.target.value)}
+              required
+            />
+          </label>
+
+          <label className="field">
+            <span>Descripcion (opcional)</span>
+            <input
+              type="text"
+              placeholder="Plan de juego o notas"
+              value={newDeckDescription}
+              onChange={(event) => setNewDeckDescription(event.target.value)}
+            />
+          </label>
+
+          <button type="submit" className="primary-button" disabled={isCreatingDeck}>
+            {isCreatingDeck ? 'Creando...' : 'Crear baraja'}
+          </button>
+        </form>
+      )}
+
+      {deckErrorMessage && <p className="error-message">{deckErrorMessage}</p>}
+
+      {isDecksLoading ? (
+        <p className="deck-state-text">Cargando barajas...</p>
+      ) : decks.length === 0 ? (
+        <p className="deck-state-text">No tienes barajas todavia. Crea la primera.</p>
+      ) : (
+        <ul className="deck-list">
+          {decks.map((deck) => (
+            <li key={deck.id ?? `${deck.name}-${deck.createdAtUtc}`} className="deck-list-item">
+              <div>
+                <h2>{deck.name}</h2>
+                <p>{deck.description || 'Sin descripcion'}</p>
+              </div>
+              <div className="deck-item-actions">
+                <span className="deck-meta">
+                  {deck.cards.reduce((sum, card) => sum + card.quantity, 0)} cartas
+                </span>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => {
+                    openDeckDetail(deck.id ?? null);
+                  }}
+                >
+                  Abrir baraja
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+
   return (
     <main className="app-shell deck-shell">
       <button
@@ -100,75 +201,18 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
         Cerrar sesion
       </button>
 
-      <section className="deck-page-card">
-        <header className="deck-header">
-          <div>
-            <p className="eyebrow">Pokemon Deck Builder</p>
-            <h1 className="deck-title">Coleccion de barajas</h1>
-            <p className="hero-copy">Bienvenido, {userName}.</p>
-          </div>
-
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => {
-              setShowCreateDeckForm((currentValue) => !currentValue);
-              setDeckErrorMessage('');
-            }}
-          >
-            {showCreateDeckForm ? 'Cancelar' : 'Nueva baraja'}
-          </button>
-        </header>
-
-        {showCreateDeckForm && (
-          <form className="create-deck-form" onSubmit={handleCreateDeck}>
-            <label className="field">
-              <span>Nombre de la baraja</span>
-              <input
-                type="text"
-                placeholder="Ej: Pikachu agresivo"
-                value={newDeckName}
-                onChange={(event) => setNewDeckName(event.target.value)}
-                required
-              />
-            </label>
-
-            <label className="field">
-              <span>Descripcion (opcional)</span>
-              <input
-                type="text"
-                placeholder="Plan de juego o notas"
-                value={newDeckDescription}
-                onChange={(event) => setNewDeckDescription(event.target.value)}
-              />
-            </label>
-
-            <button type="submit" className="primary-button" disabled={isCreatingDeck}>
-              {isCreatingDeck ? 'Creando...' : 'Crear baraja'}
-            </button>
-          </form>
-        )}
-
-        {deckErrorMessage && <p className="error-message">{deckErrorMessage}</p>}
-
-        {isDecksLoading ? (
-          <p className="deck-state-text">Cargando barajas...</p>
-        ) : decks.length === 0 ? (
-          <p className="deck-state-text">No tienes barajas todavia. Crea la primera.</p>
-        ) : (
-          <ul className="deck-list">
-            {decks.map((deck) => (
-              <li key={deck.id ?? `${deck.name}-${deck.createdAtUtc}`} className="deck-list-item">
-                <div>
-                  <h2>{deck.name}</h2>
-                  <p>{deck.description || 'Sin descripcion'}</p>
-                </div>
-                <span className="deck-meta">{deck.cards.length} cartas</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {selectedDeck ? (
+        <DeckDetailScreen
+          deck={selectedDeck}
+          userId={userId ?? ''}
+          onBackToCollection={() => {
+            openDeckDetail(null);
+          }}
+          onDeckUpdated={(updatedDeck) => {
+            setDecks((currentDecks) => currentDecks.map((deck) => (deck.id === updatedDeck.id ? updatedDeck : deck)));
+          }}
+        />
+      ) : renderDeckCollection()}
     </main>
   );
 }
