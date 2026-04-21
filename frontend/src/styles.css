@@ -153,6 +153,98 @@ input {
   font-weight: 600;
 }
 
+.deck-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.deck-editor {
+  display: grid;
+  gap: 18px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(31, 41, 55, 0.1);
+}
+
+.deck-editor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.deck-editor-title {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.deck-detail-headline {
+  display: grid;
+  gap: 6px;
+}
+
+.deck-editor-subtitle {
+  margin: 0 0 8px;
+}
+
+.deck-search-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.deck-search-form {
+  display: grid;
+  gap: 10px;
+  max-width: 460px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.card-item {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(31, 41, 55, 0.12);
+}
+
+.card-item img {
+  width: 100%;
+  aspect-ratio: 245 / 342;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #ebeef4;
+}
+
+.card-item p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.quantity-value {
+  min-width: 26px;
+  text-align: center;
+  font-size: 1.28rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.quantity-controls .secondary-button {
+  padding: 8px 12px;
+}
+
 .eyebrow {
   margin: 0 0 10px;
   font-size: 0.75rem;
@@ -285,5 +377,12 @@ h1 {
   .deck-list-item {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .deck-item-actions,
+  .deck-editor-header {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 }
