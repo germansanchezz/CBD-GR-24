@@ -157,6 +157,15 @@ decks.MapPut("/{deckId}", async (string deckId, UpdateDeckRequest request, HttpC
 
     existingDeck.Name = request.Name.Trim();
     existingDeck.Description = request.Description?.Trim() ?? string.Empty;
+    existingDeck.Cards = request.Cards
+        .Select(card => new DeckCard
+        {
+            CardId = card.CardId.Trim(),
+            Name = card.Name.Trim(),
+            ImageUrl = card.ImageUrl.Trim(),
+            Quantity = card.Quantity
+        })
+        .ToList();
     existingDeck.UpdatedAtUtc = DateTime.UtcNow;
 
     await decksCollection.ReplaceOneAsync(deck => deck.Id == deckId, existingDeck);
