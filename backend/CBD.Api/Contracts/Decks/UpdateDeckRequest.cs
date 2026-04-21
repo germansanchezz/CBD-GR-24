@@ -1,3 +1,3 @@
 namespace CBD.Api.Contracts.Decks;
 
-public sealed record UpdateDeckRequest(string Name, string? Description);
+public sealed record UpdateDeckRequest(string Name, string? Description, List<DeckCardRequest> Cards);
