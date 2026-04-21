@@ -10,7 +10,20 @@ export type Deck = {
   id?: string;
   name: string;
   description: string;
-  cards: Array<unknown>;
+  cards: DeckCard[];
   createdAtUtc: string;
   updatedAtUtc: string;
+};
+
+export type DeckCard = {
+  cardId: string;
+  name: string;
+  imageUrl: string;
+  quantity: number;
+};
+
+export type TcgSearchCard = {
+  cardId: string;
+  name: string;
+  imageUrl: string;
 };
