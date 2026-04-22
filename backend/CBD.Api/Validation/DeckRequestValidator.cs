@@ -1,4 +1,5 @@
 using CBD.Api.Contracts.Decks;
+using CBD.Api.Models;
 using System.Globalization;
 
 namespace CBD.Api.Validation;
@@ -13,6 +14,12 @@ public static class DeckRequestValidator
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             errorMessage = "Name es obligatorio.";
+            return false;
+        }
+
+        if (!DeckGameTypes.TryNormalize(request.GameType, out _))
+        {
+            errorMessage = "GameType debe ser pokemon, magic o yugioh.";
             return false;
         }
 

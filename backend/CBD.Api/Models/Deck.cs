@@ -13,6 +13,8 @@ public sealed class Deck
 
     public string Description { get; set; } = string.Empty;
 
+    public string GameType { get; set; } = DeckGameTypes.Pokemon;
+
     [BsonRepresentation(BsonType.ObjectId)]
     public string OwnerUserId { get; set; } = string.Empty;
 

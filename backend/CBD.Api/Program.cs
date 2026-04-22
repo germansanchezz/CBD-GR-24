@@ -108,10 +108,13 @@ decks.MapPost("", async (CreateDeckRequest request, HttpContext httpContext, IMo
         return authError;
     }
 
+    DeckGameTypes.TryNormalize(request.GameType, out var gameType);
+
     var deck = new Deck
     {
         Name = request.Name.Trim(),
         Description = request.Description?.Trim() ?? string.Empty,
+        GameType = gameType,
         OwnerUserId = userId,
         Cards = [],
         CreatedAtUtc = DateTime.UtcNow,
