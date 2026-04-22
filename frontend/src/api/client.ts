@@ -112,6 +112,23 @@ export async function updateDeck(args: {
   return await response.json() as Deck;
 }
 
+export async function deleteDeck(args: {
+  userId: string;
+  deckId: string;
+}): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/decks/${args.deckId}`, {
+    method: 'DELETE',
+    headers: {
+      'X-User-Id': args.userId,
+    },
+  });
+
+  if (!response.ok) {
+    const message = await readApiErrorMessage(response, 'No se pudo eliminar la baraja.');
+    throw new Error(message);
+  }
+}
+
 export async function searchCardsByGameType(args: {
   gameType: DeckGameType;
   name: string;

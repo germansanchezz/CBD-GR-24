@@ -233,6 +233,10 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
           onDeckUpdated={(updatedDeck) => {
             setDecks((currentDecks) => currentDecks.map((deck) => (deck.id === updatedDeck.id ? updatedDeck : deck)));
           }}
+            onDeckDeleted={(deletedDeckId) => {
+              setDecks((currentDecks) => currentDecks.filter((deck) => deck.id !== deletedDeckId));
+              openDeckDetail(null);
+            }}
         />
       ) : renderDeckCollection()}
     </main>

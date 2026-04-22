@@ -348,6 +348,16 @@ h1 {
   border: 1px solid rgba(31, 41, 55, 0.12);
 }
 
+.danger-button {
+  background: #b91c1c;
+  color: #fff;
+  border-color: #991b1b;
+}
+
+.danger-button:hover {
+  background: #991b1b;
+}
+
 .primary-button:disabled {
   opacity: 0.72;
   cursor: wait;

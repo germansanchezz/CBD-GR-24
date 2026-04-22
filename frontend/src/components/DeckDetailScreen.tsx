@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { searchCardsByGameType, updateDeck } from '../api/client';
+import { deleteDeck, searchCardsByGameType, updateDeck } from '../api/client';
 import { getDeckGameTypeLabel } from '../types';
 import type { Deck, DeckCard, TcgSearchCard } from '../types';
 
@@ -8,6 +8,7 @@ type DeckDetailScreenProps = {
   userId: string;
   onBackToCollection: () => void;
   onDeckUpdated: (updatedDeck: Deck) => void;
+  onDeckDeleted: (deckId: string) => void;
 };
 
 export function DeckDetailScreen({
@@ -15,6 +16,7 @@ export function DeckDetailScreen({
   userId,
   onBackToCollection,
   onDeckUpdated,
+  onDeckDeleted,
 }: DeckDetailScreenProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -59,6 +61,34 @@ export function DeckDetailScreen({
       }
     } finally {
       setIsSavingCards(false);
+    }
+  };
+
+  const handleDeleteDeck = async () => {
+    if (!deck.id) {
+      setEditorMessage('No se pudo eliminar: baraja sin id.');
+      return;
+    }
+
+    const confirmed = window.confirm(`¿Eliminar la baraja "${deck.name}"? Esta accion no se puede deshacer.`);
+    if (!confirmed) {
+      return;
+    }
+
+    setEditorMessage('');
+
+    try {
+      await deleteDeck({
+        userId,
+        deckId: deck.id,
+      });
+      onDeckDeleted(deck.id);
+    } catch (error) {
+      if (error instanceof Error) {
+        setEditorMessage(error.message);
+      } else {
+        setEditorMessage('No se pudo eliminar la baraja.');
+      }
     }
   };
 
@@ -141,6 +171,10 @@ export function DeckDetailScreen({
       <header className="deck-editor-header">
         <button type="button" className="secondary-button" onClick={onBackToCollection}>
           Volver a coleccion
+        </button>
+
+        <button type="button" className="secondary-button danger-button" onClick={() => { void handleDeleteDeck(); }}>
+          Eliminar baraja
         </button>
 
         <button
