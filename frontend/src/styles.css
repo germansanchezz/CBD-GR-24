@@ -24,7 +24,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -293,9 +294,31 @@ h1 {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.field select {
+  width: 100%;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
 .field input:focus {
   border-color: rgba(245, 158, 11, 0.75);
   box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+}
+
+.field select:focus {
+  border-color: rgba(245, 158, 11, 0.75);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+}
+
+.deck-game-type {
+  margin: 6px 0 0;
+  color: #9a5f0a;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .primary-button,

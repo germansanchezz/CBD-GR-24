@@ -1,4 +1,4 @@
-import type { AuthMode, AuthUser, Deck, DeckCard, TcgSearchCard } from '../types';
+import type { AuthMode, AuthUser, Deck, DeckCard, DeckGameType, TcgSearchCard } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
 const TCGDEX_BASE_URL = 'https://api.tcgdex.net/v2/es';
@@ -62,6 +62,7 @@ export async function createDeck(args: {
   userId: string;
   name: string;
   description: string;
+  gameType: DeckGameType;
 }): Promise<Deck> {
   const response = await fetch(`${API_BASE_URL}/api/decks`, {
     method: 'POST',
@@ -72,6 +73,7 @@ export async function createDeck(args: {
     body: JSON.stringify({
       name: args.name,
       description: args.description,
+      gameType: args.gameType,
     }),
   });
 

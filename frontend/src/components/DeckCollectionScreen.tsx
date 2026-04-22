@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { createDeck, getDecks } from '../api/client';
-import type { AuthUser, Deck } from '../types';
+import { DECK_GAME_TYPE_OPTIONS } from '../types';
+import type { AuthUser, Deck, DeckGameType } from '../types';
 import { DeckDetailScreen } from './DeckDetailScreen';
 
 type DeckCollectionScreenProps = {
@@ -15,6 +16,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
   const [showCreateDeckForm, setShowCreateDeckForm] = useState(false);
   const [newDeckName, setNewDeckName] = useState('');
   const [newDeckDescription, setNewDeckDescription] = useState('');
+  const [newDeckGameType, setNewDeckGameType] = useState<DeckGameType>('pokemon');
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   const [openedDeckId, setOpenedDeckId] = useState<string | null>(null);
 
@@ -81,11 +83,13 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
         userId,
         name,
         description: newDeckDescription.trim(),
+        gameType: newDeckGameType,
       });
 
       setDecks((previousDecks) => [createdDeck, ...previousDecks]);
       setNewDeckName('');
       setNewDeckDescription('');
+      setNewDeckGameType('pokemon');
       setShowCreateDeckForm(false);
     } catch (error) {
       if (error instanceof Error) {
@@ -146,6 +150,21 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
             />
           </label>
 
+          <label className="field">
+            <span>Tipo de baraja</span>
+            <select
+              value={newDeckGameType}
+              onChange={(event) => setNewDeckGameType(event.target.value as DeckGameType)}
+              required
+            >
+              {DECK_GAME_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <button type="submit" className="primary-button" disabled={isCreatingDeck}>
             {isCreatingDeck ? 'Creando...' : 'Crear baraja'}
           </button>
@@ -165,6 +184,9 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
               <div>
                 <h2>{deck.name}</h2>
                 <p>{deck.description || 'Sin descripcion'}</p>
+                <p className="deck-game-type">
+                  {DECK_GAME_TYPE_OPTIONS.find((option) => option.value === deck.gameType)?.label ?? deck.gameType}
+                </p>
               </div>
               <div className="deck-item-actions">
                 <span className="deck-meta">
