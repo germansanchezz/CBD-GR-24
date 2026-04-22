@@ -7,10 +7,13 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpClient();
 builder.Services.Configure<MongoDbOptions>(builder.Configuration.GetSection(MongoDbOptions.SectionName));
 builder.Services.AddSingleton<IMongoClient>(serviceProvider =>
 {
@@ -46,6 +49,41 @@ app.MapGet("/api/health/mongo", async (IMongoClient mongoClient, IOptions<MongoD
     catch (Exception exception)
     {
         return Results.Problem(title: "MongoDB connection failed", detail: exception.Message, statusCode: 503);
+    }
+});
+
+var cards = app.MapGroup("/api/cards");
+
+cards.MapGet("/search", async (string gameType, string name, IHttpClientFactory httpClientFactory, CancellationToken cancellationToken) =>
+{
+    if (!DeckGameTypes.TryNormalize(gameType, out var normalizedGameType))
+    {
+        return Results.BadRequest(new { message = "gameType debe ser pokemon, magic o yugioh." });
+    }
+
+    var query = name.Trim();
+    if (string.IsNullOrWhiteSpace(query))
+    {
+        return Results.BadRequest(new { message = "name es obligatorio." });
+    }
+
+    var httpClient = httpClientFactory.CreateClient();
+
+    try
+    {
+        var cards = normalizedGameType switch
+        {
+            DeckGameTypes.Pokemon => await SearchPokemonCardsAsync(httpClient, query, cancellationToken),
+            DeckGameTypes.Magic => await SearchMagicCardsAsync(httpClient, query, cancellationToken),
+            DeckGameTypes.Yugioh => await SearchYugiohCardsAsync(httpClient, query, cancellationToken),
+            _ => []
+        };
+
+        return Results.Ok(cards);
+    }
+    catch (HttpRequestException exception)
+    {
+        return Results.Problem(title: "Card provider request failed", detail: exception.Message, statusCode: 503);
     }
 });
 
@@ -286,6 +324,174 @@ static bool TryGetUserId(HttpContext httpContext, out string userId, out IResult
     return true;
 }
 
+static async Task<List<CardSearchResultResponse>> SearchPokemonCardsAsync(HttpClient httpClient, string name, CancellationToken cancellationToken)
+{
+    var encodedName = Uri.EscapeDataString(name);
+    var cards = await httpClient.GetFromJsonAsync<List<TcgDexCardSummary>>($"https://api.tcgdex.net/v2/es/cards?name={encodedName}", cancellationToken)
+        ?? [];
+
+    var results = new List<CardSearchResultResponse>();
+
+    foreach (var card in cards.Take(50))
+    {
+        if (string.IsNullOrWhiteSpace(card.Id) || string.IsNullOrWhiteSpace(card.Name))
+        {
+            continue;
+        }
+
+        var imageBase = card.Image;
+
+        if (string.IsNullOrWhiteSpace(imageBase))
+        {
+            var details = await httpClient.GetFromJsonAsync<TcgDexCardDetail>($"https://api.tcgdex.net/v2/es/cards/{card.Id}", cancellationToken);
+            imageBase = details?.Image;
+        }
+
+        if (string.IsNullOrWhiteSpace(imageBase))
+        {
+            continue;
+        }
+
+        results.Add(new CardSearchResultResponse(card.Id, card.Name, $"{imageBase}/high.webp"));
+    }
+
+    return results;
+}
+
+static async Task<List<CardSearchResultResponse>> SearchMagicCardsAsync(HttpClient httpClient, string name, CancellationToken cancellationToken)
+{
+    var encodedQuery = Uri.EscapeDataString($"name:{name} lang:es");
+    var response = await httpClient.GetFromJsonAsync<ScryfallSearchResponse>($"https://api.scryfall.com/cards/search?q={encodedQuery}", cancellationToken);
+    if (response?.Data is null)
+    {
+        return [];
+    }
+
+    return response.Data
+        .Take(50)
+        .Select(card =>
+        {
+            var imageUrl = card.ImageUris?.Normal
+                ?? card.CardFaces?.FirstOrDefault(face => !string.IsNullOrWhiteSpace(face.ImageUris?.Normal))?.ImageUris?.Normal;
+
+            if (string.IsNullOrWhiteSpace(card.Id) || string.IsNullOrWhiteSpace(imageUrl))
+            {
+                return null;
+            }
+
+            var displayName = string.IsNullOrWhiteSpace(card.PrintedName) ? card.Name : card.PrintedName;
+            return new CardSearchResultResponse(card.Id, displayName, imageUrl);
+        })
+        .Where(card => card is not null)
+        .Cast<CardSearchResultResponse>()
+        .ToList();
+}
+
+static async Task<List<CardSearchResultResponse>> SearchYugiohCardsAsync(HttpClient httpClient, string name, CancellationToken cancellationToken)
+{
+    var encodedName = Uri.EscapeDataString(name);
+    var response = await httpClient.GetFromJsonAsync<YugiohSearchResponse>($"https://db.ygoprodeck.com/api/v7/cardinfo.php?fname={encodedName}", cancellationToken);
+    if (response?.Data is null)
+    {
+        return [];
+    }
+
+    return response.Data
+        .Take(50)
+        .Select(card =>
+        {
+            var imageUrl = card.CardImages?.FirstOrDefault()?.ImageUrl;
+            if (string.IsNullOrWhiteSpace(imageUrl))
+            {
+                return null;
+            }
+
+            return new CardSearchResultResponse(card.Id.ToString(), card.Name, imageUrl);
+        })
+        .Where(card => card is not null)
+        .Cast<CardSearchResultResponse>()
+        .ToList();
+}
+
 public sealed record RegisterRequest(string Email, string Password, string DisplayName);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record AuthResponse(string? Id, string Email, string DisplayName);
+public sealed record CardSearchResultResponse(string CardId, string Name, string ImageUrl);
+
+public sealed class TcgDexCardSummary
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("image")]
+    public string? Image { get; set; }
+}
+
+public sealed class TcgDexCardDetail
+{
+    [JsonPropertyName("image")]
+    public string? Image { get; set; }
+}
+
+public sealed class ScryfallSearchResponse
+{
+    [JsonPropertyName("data")]
+    public List<ScryfallCard>? Data { get; set; }
+}
+
+public sealed class ScryfallCard
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("printed_name")]
+    public string? PrintedName { get; set; }
+
+    [JsonPropertyName("image_uris")]
+    public ScryfallImageUris? ImageUris { get; set; }
+
+    [JsonPropertyName("card_faces")]
+    public List<ScryfallCardFace>? CardFaces { get; set; }
+}
+
+public sealed class ScryfallCardFace
+{
+    [JsonPropertyName("image_uris")]
+    public ScryfallImageUris? ImageUris { get; set; }
+}
+
+public sealed class ScryfallImageUris
+{
+    [JsonPropertyName("normal")]
+    public string? Normal { get; set; }
+}
+
+public sealed class YugiohSearchResponse
+{
+    [JsonPropertyName("data")]
+    public List<YugiohCard>? Data { get; set; }
+}
+
+public sealed class YugiohCard
+{
+    [JsonPropertyName("id")]
+    public long Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("card_images")]
+    public List<YugiohCardImage>? CardImages { get; set; }
+}
+
+public sealed class YugiohCardImage
+{
+    [JsonPropertyName("image_url")]
+    public string? ImageUrl { get; set; }
+}
