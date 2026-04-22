@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { searchCardsByGameType, updateDeck } from '../api/client';
+import { getDeckGameTypeLabel } from '../types';
 import type { Deck, DeckCard, TcgSearchCard } from '../types';
 
 type DeckDetailScreenProps = {
@@ -29,6 +30,7 @@ export function DeckDetailScreen({
     .reduce((sum, card) => sum + card.quantity, 0);
 
   const getQuantityInDeck = (cardId: string) => deck.cards.find((card) => card.cardId === cardId)?.quantity ?? 0;
+  const maxCopiesPerName = deck.gameType === 'yugioh' ? 3 : 4;
 
   const persistCards = async (nextCards: DeckCard[]) => {
     if (!deck.id) {
@@ -64,8 +66,6 @@ export function DeckDetailScreen({
     const existingCards = deck.cards;
     const cardIndex = existingCards.findIndex((existingCard) => existingCard.cardId === card.cardId);
     const nextCards = existingCards.map((existingCard) => ({ ...existingCard }));
-    const maxCopiesPerName = deck.gameType === 'yugioh' ? 3 : 4;
-
     if (delta === 1) {
       const totalCards = getTotalCards(existingCards);
       const sameNameCopies = getCopiesByName(existingCards, card.name);
@@ -129,7 +129,7 @@ export function DeckDetailScreen({
       if (error instanceof Error) {
         setEditorMessage(error.message);
       } else {
-        setEditorMessage('No se pudo buscar en TCGDex.');
+        setEditorMessage('No se pudo buscar cartas para esta baraja.');
       }
     } finally {
       setIsSearching(false);
@@ -160,7 +160,7 @@ export function DeckDetailScreen({
           <p className="eyebrow">Edicion de baraja</p>
           <h2 className="deck-editor-title">{deck.name}</h2>
           <p className="deck-state-text">
-            {getTotalCards(deck.cards)} / 60 cartas | Maximo 4 copias por nombre
+            {getDeckGameTypeLabel(deck.gameType)} | {getTotalCards(deck.cards)} / 60 cartas | Maximo {maxCopiesPerName} copias por nombre
           </p>
         </header>
 
@@ -173,7 +173,7 @@ export function DeckDetailScreen({
                   type="text"
                   value={searchText}
                   onChange={(event) => setSearchText(event.target.value)}
-                  placeholder="Ej: Pikachu"
+                  placeholder="Ej: Carta por nombre"
                 />
               </label>
 

@@ -1,6 +1,6 @@
 # CBD-GR-24
 
-Monorepo base para el proyecto de barajas Pokemon TCG.
+Monorepo base para el proyecto DeckBuilder multijuego.
 
 ## Estructura
 

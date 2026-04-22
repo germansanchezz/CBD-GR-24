@@ -19,10 +19,14 @@ export type Deck = {
 export type DeckGameType = 'pokemon' | 'magic' | 'yugioh';
 
 export const DECK_GAME_TYPE_OPTIONS: Array<{ value: DeckGameType; label: string }> = [
-  { value: 'pokemon', label: 'Pokemon' },
+  { value: 'pokemon', label: 'Pokémon' },
   { value: 'magic', label: 'Magic: The Gathering' },
   { value: 'yugioh', label: 'Yu-Gi-Oh!' },
 ];
+
+export function getDeckGameTypeLabel(gameType: DeckGameType): string {
+  return DECK_GAME_TYPE_OPTIONS.find((option) => option.value === gameType)?.label ?? gameType;
+}
 
 export type DeckCard = {
   cardId: string;

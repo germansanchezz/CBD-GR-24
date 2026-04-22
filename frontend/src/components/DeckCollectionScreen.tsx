@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { createDeck, getDecks } from '../api/client';
-import { DECK_GAME_TYPE_OPTIONS } from '../types';
+import { DECK_GAME_TYPE_OPTIONS, getDeckGameTypeLabel } from '../types';
 import type { AuthUser, Deck, DeckGameType } from '../types';
 import { DeckDetailScreen } from './DeckDetailScreen';
 
@@ -110,7 +110,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
     <section className="deck-page-card">
       <header className="deck-header">
         <div>
-          <p className="eyebrow">Pokemon Deck Builder</p>
+          <p className="eyebrow">DeckBuilder</p>
           <h1 className="deck-title">Coleccion de barajas</h1>
           <p className="hero-copy">Bienvenido, {userName}.</p>
         </div>
@@ -133,7 +133,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
             <span>Nombre de la baraja</span>
             <input
               type="text"
-              placeholder="Ej: Pikachu agresivo"
+              placeholder="Ej: Mazo agresivo"
               value={newDeckName}
               onChange={(event) => setNewDeckName(event.target.value)}
               required
@@ -185,7 +185,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
                 <h2>{deck.name}</h2>
                 <p>{deck.description || 'Sin descripcion'}</p>
                 <p className="deck-game-type">
-                  {DECK_GAME_TYPE_OPTIONS.find((option) => option.value === deck.gameType)?.label ?? deck.gameType}
+                  {getDeckGameTypeLabel(deck.gameType)}
                 </p>
               </div>
               <div className="deck-item-actions">

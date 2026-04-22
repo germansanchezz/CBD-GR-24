@@ -43,9 +43,9 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
   return (
     <main className="app-shell auth-shell">
       <section className="hero-card">
-        <p className="eyebrow">Pokemon TCG</p>
+        <p className="eyebrow">DeckBuilder</p>
         <h1>{mode === 'login' ? 'Login' : 'Registro'}</h1>
-        <p className="hero-copy">Acceso simple para entrar en la pantalla de barajas.</p>
+        <p className="hero-copy">Acceso simple para gestionar tus barajas multijuego.</p>
       </section>
 
       <form className="auth-card" onSubmit={handleSubmit}>
