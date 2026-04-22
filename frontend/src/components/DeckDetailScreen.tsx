@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { searchTcgCardsByName, updateDeck } from '../api/client';
+import { searchCardsByGameType, updateDeck } from '../api/client';
 import type { Deck, DeckCard, TcgSearchCard } from '../types';
 
 type DeckDetailScreenProps = {
@@ -64,6 +64,7 @@ export function DeckDetailScreen({
     const existingCards = deck.cards;
     const cardIndex = existingCards.findIndex((existingCard) => existingCard.cardId === card.cardId);
     const nextCards = existingCards.map((existingCard) => ({ ...existingCard }));
+    const maxCopiesPerName = deck.gameType === 'yugioh' ? 3 : 4;
 
     if (delta === 1) {
       const totalCards = getTotalCards(existingCards);
@@ -74,8 +75,8 @@ export function DeckDetailScreen({
         return;
       }
 
-      if (sameNameCopies >= 4) {
-        setEditorMessage('No puedes tener mas de 4 copias con el mismo nombre.');
+      if (sameNameCopies >= maxCopiesPerName) {
+        setEditorMessage(`No puedes tener mas de ${maxCopiesPerName} copias con el mismo nombre.`);
         return;
       }
 
@@ -119,7 +120,10 @@ export function DeckDetailScreen({
     setEditorMessage('');
 
     try {
-      const cards = await searchTcgCardsByName(query);
+      const cards = await searchCardsByGameType({
+        gameType: deck.gameType,
+        name: query,
+      });
       setSearchResults(cards);
     } catch (error) {
       if (error instanceof Error) {

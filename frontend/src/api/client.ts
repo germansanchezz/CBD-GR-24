@@ -1,7 +1,6 @@
 import type { AuthMode, AuthUser, Deck, DeckCard, DeckGameType, TcgSearchCard } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
-const TCGDEX_BASE_URL = 'https://api.tcgdex.net/v2/es';
 
 type ApiErrorPayload = {
   message?: string;
@@ -113,59 +112,23 @@ export async function updateDeck(args: {
   return await response.json() as Deck;
 }
 
-type TcgSearchRawCard = {
-  id: string;
+export async function searchCardsByGameType(args: {
+  gameType: DeckGameType;
   name: string;
-  image?: string;
-};
-
-type TcgCardDetail = {
-  image?: string;
-};
-
-async function resolveCardImageBase(card: TcgSearchRawCard): Promise<string | null> {
-  if (card.image) {
-    return card.image;
-  }
-
-  const response = await fetch(`${TCGDEX_BASE_URL}/cards/${card.id}`);
-  if (!response.ok) {
-    return null;
-  }
-
-  const payload = await response.json() as TcgCardDetail;
-  return payload.image ?? null;
-}
-
-function buildCardImageUrl(imageBase: string): string {
-  return `${imageBase}/high.webp`;
-}
-
-export async function searchTcgCardsByName(name: string): Promise<TcgSearchCard[]> {
-  const query = name.trim();
+}): Promise<TcgSearchCard[]> {
+  const query = args.name.trim();
   if (!query) {
     return [];
   }
 
-  const response = await fetch(`${TCGDEX_BASE_URL}/cards?name=${encodeURIComponent(query)}`);
+  const response = await fetch(
+    `${API_BASE_URL}/api/cards/search?gameType=${args.gameType}&name=${encodeURIComponent(query)}`,
+  );
+
   if (!response.ok) {
-    throw new Error('No se pudo consultar TCGDex.');
+    const message = await readApiErrorMessage(response, 'No se pudo buscar cartas para esta baraja.');
+    throw new Error(message);
   }
 
-  const rawCards = await response.json() as TcgSearchRawCard[];
-
-  const mappedCards = await Promise.all(rawCards.map(async (card) => {
-    const imageBase = await resolveCardImageBase(card);
-    if (!imageBase) {
-      return null;
-    }
-
-    return {
-      cardId: card.id,
-      name: card.name,
-      imageUrl: buildCardImageUrl(imageBase),
-    } satisfies TcgSearchCard;
-  }));
-
-  return mappedCards.filter((card): card is TcgSearchCard => card !== null);
+  return await response.json() as TcgSearchCard[];
 }
