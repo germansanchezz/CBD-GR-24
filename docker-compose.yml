@@ -18,7 +18,7 @@ services:
       - mongo
     environment:
       MongoDb__ConnectionString: mongodb://mongo:27017
-      MongoDb__DatabaseName: pokemon_cards
+      MongoDb__DatabaseName: deckbuilder_cards
     ports:
       - "5000:8080"
 

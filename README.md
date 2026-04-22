@@ -86,7 +86,7 @@ Pasos:
 
 1. Abre MongoDB Compass.
 2. Pega `mongodb://localhost:27017` en la pantalla de conexión.
-3. Conecta y entra en la base `pokemon_cards`.
+3. Conecta y entra en la base `deckbuilder_cards`.
 
 ## Docker
 
