@@ -136,11 +136,6 @@ decks.MapPut("/{deckId}", async (string deckId, UpdateDeckRequest request, HttpC
         return Results.BadRequest(new { message = "deckId no es valido." });
     }
 
-    if (!DeckRequestValidator.TryValidateUpdate(request, out var updateErrorMessage))
-    {
-        return Results.BadRequest(new { message = updateErrorMessage });
-    }
-
     if (!TryGetUserId(httpContext, out var userId, out var authError))
     {
         return authError;
@@ -156,6 +151,11 @@ decks.MapPut("/{deckId}", async (string deckId, UpdateDeckRequest request, HttpC
     if (existingDeck is null)
     {
         return Results.NotFound(new { message = "Baraja no encontrada." });
+    }
+
+    if (!DeckRequestValidator.TryValidateUpdate(request, existingDeck.GameType, out var updateErrorMessage))
+    {
+        return Results.BadRequest(new { message = updateErrorMessage });
     }
 
     existingDeck.Name = request.Name.Trim();

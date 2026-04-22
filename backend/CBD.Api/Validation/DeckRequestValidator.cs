@@ -6,7 +6,8 @@ namespace CBD.Api.Validation;
 
 public static class DeckRequestValidator
 {
-    public const int MaxCopiesPerCardName = 4;
+    public const int MaxCopiesPerCardNameDefault = 4;
+    public const int MaxCopiesPerCardNameYugioh = 3;
     public const int MaxCardsPerDeck = 60;
 
     public static bool TryValidateCreate(CreateDeckRequest request, out string errorMessage)
@@ -27,7 +28,7 @@ public static class DeckRequestValidator
         return true;
     }
 
-    public static bool TryValidateUpdate(UpdateDeckRequest request, out string errorMessage)
+    public static bool TryValidateUpdate(UpdateDeckRequest request, string gameType, out string errorMessage)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {
@@ -43,6 +44,10 @@ public static class DeckRequestValidator
 
         var totalCards = 0;
         var copiesByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        var maxCopiesPerName = gameType == DeckGameTypes.Yugioh
+            ? MaxCopiesPerCardNameYugioh
+            : MaxCopiesPerCardNameDefault;
 
         foreach (var card in request.Cards)
         {
@@ -70,9 +75,9 @@ public static class DeckRequestValidator
             var normalizedName = card.Name.Trim().ToUpper(CultureInfo.InvariantCulture);
             copiesByName[normalizedName] = copiesByName.GetValueOrDefault(normalizedName) + card.Quantity;
 
-            if (copiesByName[normalizedName] > MaxCopiesPerCardName)
+            if (copiesByName[normalizedName] > maxCopiesPerName)
             {
-                errorMessage = $"No puedes tener mas de {MaxCopiesPerCardName} copias con el mismo nombre.";
+                errorMessage = $"No puedes tener mas de {maxCopiesPerName} copias con el mismo nombre.";
                 return false;
             }
         }
