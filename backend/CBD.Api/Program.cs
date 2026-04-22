@@ -8,12 +8,19 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("external-cards", client =>
+{
+    client.DefaultRequestHeaders.UserAgent.Clear();
+    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("CBD-GR-24", "1.0"));
+    client.DefaultRequestHeaders.Accept.Clear();
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+});
 builder.Services.Configure<MongoDbOptions>(builder.Configuration.GetSection(MongoDbOptions.SectionName));
 builder.Services.AddSingleton<IMongoClient>(serviceProvider =>
 {
@@ -67,7 +74,7 @@ cards.MapGet("/search", async (string gameType, string name, IHttpClientFactory 
         return Results.BadRequest(new { message = "name es obligatorio." });
     }
 
-    var httpClient = httpClientFactory.CreateClient();
+    var httpClient = httpClientFactory.CreateClient("external-cards");
 
     try
     {
@@ -361,13 +368,25 @@ static async Task<List<CardSearchResultResponse>> SearchPokemonCardsAsync(HttpCl
 static async Task<List<CardSearchResultResponse>> SearchMagicCardsAsync(HttpClient httpClient, string name, CancellationToken cancellationToken)
 {
     var encodedQuery = Uri.EscapeDataString($"name:{name} lang:es");
-    var response = await httpClient.GetFromJsonAsync<ScryfallSearchResponse>($"https://api.scryfall.com/cards/search?q={encodedQuery}", cancellationToken);
-    if (response?.Data is null)
+    using var response = await httpClient.GetAsync($"https://api.scryfall.com/cards/search?q={encodedQuery}", cancellationToken);
+
+    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
     {
         return [];
     }
 
-    return response.Data
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException($"Scryfall devolvio {(int)response.StatusCode} al buscar cartas de Magic.");
+    }
+
+    var searchResponse = await response.Content.ReadFromJsonAsync<ScryfallSearchResponse>(cancellationToken: cancellationToken);
+    if (searchResponse?.Data is null)
+    {
+        return [];
+    }
+
+    return searchResponse.Data
         .Take(50)
         .Select(card =>
         {
