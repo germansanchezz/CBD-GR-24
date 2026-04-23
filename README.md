@@ -13,19 +13,21 @@ Monorepo base para el proyecto DeckBuilder multijuego.
 - .NET 8 SDK.
 - Node.js 22 o superior.
 - Docker, si quieres levantar MongoDB con compose.
+- En Windows, Docker Desktop debe estar abierto para usar `docker compose`.
 
 ## Arranque
 
 Backend:
 
 ```powershell
-dotnet run --project .\backend\CBD.Api\CBD.Api.csproj
+cd .\backend\CBD.Api
+dotnet run
 ```
 
 Frontend:
 
 ```powershell
-Set-Location .\frontend
+cd .\frontend
 npm install
 npm run dev
 ```
@@ -63,7 +65,8 @@ docker compose up -d mongo
 2. Arranca la API:
 
 ```powershell
-dotnet run --project .\backend\CBD.Api\CBD.Api.csproj
+cd .\backend\CBD.Api
+dotnet run
 ```
 
 3. Prueba el healthcheck:
