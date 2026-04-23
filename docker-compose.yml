@@ -18,7 +18,7 @@ services:
       - mongo
     environment:
       MongoDb__ConnectionString: mongodb://mongo:27017
-      MongoDb__DatabaseName: deckbuilder_cards
+      MongoDb__DatabaseName: deckbuilder_db
     ports:
       - "5000:8080"
 
