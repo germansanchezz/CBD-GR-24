@@ -33,6 +33,16 @@ Orden recomendado de comprobación:
 
 ## Variables de entorno
 
+Solo necesitas archivo `.env` en frontend.
+
+Al clonar el repositorio:
+
+1. Duplica `frontend/.env.example`.
+2. Renombra la copia a `frontend/.env` (quitando `.example`).
+
+Para backend no hace falta `.env.example` en local, porque usa `appsettings.json` y `appsettings.Development.json`.
+Las variables de entorno del backend se usan sobre todo en despliegue (Render, Docker, etc.).
+
 ### Backend
 
 Variables soportadas:
@@ -80,6 +90,8 @@ cd .\frontend
 npm install
 npm run dev
 ```
+
+Si quieres forzar URL de API sin tocar código, asegúrate de tener `frontend/.env` creado desde `frontend/.env.example`.
 
 4. Abrir app:
 
