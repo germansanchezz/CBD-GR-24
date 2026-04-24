@@ -100,6 +100,8 @@ select {
   display: grid;
   gap: 12px;
   max-width: 520px;
+  width: 100%;
+  margin-inline: auto;
   padding: 20px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.66);
@@ -176,7 +178,10 @@ select {
 
 .deck-editor-title {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: clamp(2rem, 4.2vw, 2.8rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: #1f2937;
 }
 
 .deck-detail-headline {
@@ -185,7 +190,11 @@ select {
 }
 
 .deck-editor-subtitle {
-  margin: 0 0 8px;
+  margin: 4px 0 8px;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9a5f0a;
 }
 
 .deck-search-panel {
@@ -349,13 +358,13 @@ h1 {
 }
 
 .danger-button {
-  background: #b91c1c;
+  background: #a14b2f;
   color: #fff;
-  border-color: #991b1b;
+  border-color: #8d3f26;
 }
 
 .danger-button:hover {
-  background: #991b1b;
+  background: #8d3f26;
 }
 
 .primary-button:disabled {
