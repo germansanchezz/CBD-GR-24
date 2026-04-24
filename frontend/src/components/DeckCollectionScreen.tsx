@@ -1,9 +1,9 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { createDeck, getDecks } from '../api/client';
 import { DECK_GAME_TYPE_OPTIONS, getDeckGameTypeLabel } from '../types';
 import type { AuthUser, Deck, DeckGameType } from '../types';
 import { DeckDetailScreen } from './DeckDetailScreen';
-import { FiPlus, FiUser } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiPlus, FiUser, FiX } from 'react-icons/fi';
 
 type DeckCollectionScreenProps = {
   currentUser: AuthUser;
@@ -18,8 +18,10 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
   const [newDeckName, setNewDeckName] = useState('');
   const [newDeckDescription, setNewDeckDescription] = useState('');
   const [newDeckGameType, setNewDeckGameType] = useState<DeckGameType>('pokemon');
+  const [isGameTypeMenuOpen, setIsGameTypeMenuOpen] = useState(false);
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   const [openedDeckId, setOpenedDeckId] = useState<string | null>(null);
+  const gameTypeMenuRef = useRef<HTMLDivElement | null>(null);
 
   const userId = currentUser.id;
   const userName = currentUser.displayName || currentUser.email;
@@ -61,6 +63,24 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
 
     void loadDecks();
   }, [userId]);
+
+  useEffect(() => {
+    if (!showCreateDeckForm) {
+      setIsGameTypeMenuOpen(false);
+      return;
+    }
+
+    const handleDocumentMouseDown = (event: MouseEvent) => {
+      if (!gameTypeMenuRef.current?.contains(event.target as Node)) {
+        setIsGameTypeMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocumentMouseDown);
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentMouseDown);
+    };
+  }, [showCreateDeckForm]);
 
   const handleCreateDeck = async (event: FormEvent) => {
     event.preventDefault();
@@ -107,6 +127,14 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
     setOpenedDeckId(deckId);
   };
 
+  const closeCreateDeckModal = () => {
+    setShowCreateDeckForm(false);
+    setIsGameTypeMenuOpen(false);
+    setDeckErrorMessage('');
+  };
+
+  const selectedGameTypeLabel = DECK_GAME_TYPE_OPTIONS.find((option) => option.value === newDeckGameType)?.label ?? 'Selecciona un tipo';
+
   const renderDeckCollection = () => (
     <section className="deck-page-card">
       <header className="deck-header">
@@ -120,60 +148,16 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
           type="button"
           className="primary-button icon-label-button"
           onClick={() => {
-            setShowCreateDeckForm((currentValue) => !currentValue);
+            setShowCreateDeckForm(true);
             setDeckErrorMessage('');
           }}
         >
           <FiPlus aria-hidden="true" />
-          {showCreateDeckForm ? 'Cancelar' : 'Nueva baraja'}
+          Nueva baraja
         </button>
       </header>
 
-      {showCreateDeckForm && (
-        <form className="create-deck-form" onSubmit={handleCreateDeck}>
-          <label className="field">
-            <span>Nombre de la baraja</span>
-            <input
-              type="text"
-              placeholder="Ej: Mazo agresivo"
-              value={newDeckName}
-              onChange={(event) => setNewDeckName(event.target.value)}
-              required
-            />
-          </label>
-
-          <label className="field">
-            <span>Descripcion (opcional)</span>
-            <input
-              type="text"
-              placeholder="Plan de juego o notas"
-              value={newDeckDescription}
-              onChange={(event) => setNewDeckDescription(event.target.value)}
-            />
-          </label>
-
-          <label className="field">
-            <span>Tipo de baraja</span>
-            <select
-              value={newDeckGameType}
-              onChange={(event) => setNewDeckGameType(event.target.value as DeckGameType)}
-              required
-            >
-              {DECK_GAME_TYPE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <button type="submit" className="primary-button" disabled={isCreatingDeck}>
-            {isCreatingDeck ? 'Creando...' : 'Crear baraja'}
-          </button>
-        </form>
-      )}
-
-      {deckErrorMessage && <p className="error-message">{deckErrorMessage}</p>}
+      {deckErrorMessage && !showCreateDeckForm && <p className="error-message">{deckErrorMessage}</p>}
 
       {isDecksLoading ? (
         <p className="deck-state-text">Cargando barajas...</p>
@@ -208,6 +192,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
           ))}
         </ul>
       )}
+
     </section>
   );
 
@@ -217,8 +202,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
         type="button"
         className="logout-button icon-label-button"
         onClick={() => {
-          setShowCreateDeckForm(false);
-          setDeckErrorMessage('');
+          closeCreateDeckModal();
           onLogout();
         }}
       >
@@ -242,6 +226,107 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
             }}
         />
       ) : renderDeckCollection()}
+
+      {!selectedDeck && showCreateDeckForm && (
+        <div className="create-deck-modal-backdrop" onClick={closeCreateDeckModal}>
+          <section
+            className="create-deck-modal"
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            aria-modal="true"
+            role="dialog"
+            aria-labelledby="create-deck-title"
+          >
+            <header className="create-deck-modal-header">
+              <h2 id="create-deck-title">Nueva baraja</h2>
+              <button
+                type="button"
+                className="secondary-button icon-label-button create-deck-modal-close-button"
+                onClick={closeCreateDeckModal}
+                aria-label="Cerrar modal"
+              >
+                <FiX aria-hidden="true" />
+                Cerrar
+              </button>
+            </header>
+
+            <form className="create-deck-form" onSubmit={handleCreateDeck}>
+              <label className="field">
+                <span>Nombre de la baraja</span>
+                <input
+                  type="text"
+                  placeholder="Ej: Mazo agresivo"
+                  value={newDeckName}
+                  onChange={(event) => setNewDeckName(event.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span>Descripcion (opcional)</span>
+                <input
+                  type="text"
+                  placeholder="Plan de juego o notas"
+                  value={newDeckDescription}
+                  onChange={(event) => setNewDeckDescription(event.target.value)}
+                />
+              </label>
+
+              <label className="field">
+                <span>Tipo de baraja</span>
+                <div className="game-type-select" ref={gameTypeMenuRef}>
+                  <button
+                    type="button"
+                    className="game-type-trigger"
+                    onClick={() => {
+                      setIsGameTypeMenuOpen((currentValue) => !currentValue);
+                    }}
+                    aria-haspopup="listbox"
+                    aria-expanded={isGameTypeMenuOpen}
+                    aria-label="Seleccionar tipo de baraja"
+                  >
+                    <span>{selectedGameTypeLabel}</span>
+                    <FiChevronDown aria-hidden="true" />
+                  </button>
+
+                  {isGameTypeMenuOpen && (
+                    <ul className="game-type-menu" role="listbox" aria-label="Tipos de baraja">
+                      {DECK_GAME_TYPE_OPTIONS.map((option) => {
+                        const isSelected = option.value === newDeckGameType;
+
+                        return (
+                          <li key={option.value}>
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={isSelected}
+                              className={`game-type-option${isSelected ? ' is-active' : ''}`}
+                              onClick={() => {
+                                setNewDeckGameType(option.value);
+                                setIsGameTypeMenuOpen(false);
+                              }}
+                            >
+                              <span>{option.label}</span>
+                              {isSelected && <FiCheck aria-hidden="true" />}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </label>
+
+              <button type="submit" className="primary-button" disabled={isCreatingDeck}>
+                {isCreatingDeck ? 'Creando...' : 'Crear baraja'}
+              </button>
+
+              {deckErrorMessage && <p className="error-message">{deckErrorMessage}</p>}
+            </form>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

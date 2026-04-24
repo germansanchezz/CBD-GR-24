@@ -62,7 +62,7 @@ select {
 .hero-card {
   border-radius: 28px;
   padding: 28px;
-  text-align: left;
+  text-align: center;
 }
 
 .hero-card-center {
@@ -99,13 +99,62 @@ select {
 .create-deck-form {
   display: grid;
   gap: 12px;
-  max-width: 520px;
+  max-width: 100%;
   width: 100%;
-  margin-inline: auto;
+  margin: 0;
+}
+
+.create-deck-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 999;
+}
+
+.create-deck-modal {
+  width: min(100%, 620px);
+  overflow: visible;
   padding: 20px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.66);
+  background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(31, 41, 55, 0.1);
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22);
+}
+
+.create-deck-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.create-deck-modal-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.create-deck-modal-close-button {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.create-deck-modal-close-button:hover {
+  background: rgba(31, 41, 55, 0.08);
+  border-color: rgba(31, 41, 55, 0.26);
+}
+
+.create-deck-modal-close-button:focus-visible {
+  outline: none;
+  border-color: rgba(245, 158, 11, 0.75);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
 }
 
 .deck-state-text {
@@ -306,6 +355,7 @@ h1 {
   margin: 14px 0 0;
   color: #5b6472;
   max-width: 36ch;
+  margin-inline: auto;
 }
 
 .auth-card {
@@ -353,6 +403,94 @@ h1 {
 .field select:focus {
   border-color: rgba(245, 158, 11, 0.75);
   box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+}
+
+.game-type-select {
+  position: relative;
+}
+
+.game-type-trigger {
+  width: 100%;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1f2937;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.game-type-trigger:hover {
+  border-color: rgba(31, 41, 55, 0.2);
+}
+
+.game-type-trigger:focus-visible,
+.game-type-trigger[aria-expanded='true'] {
+  outline: none;
+  border-color: rgba(245, 158, 11, 0.75);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+}
+
+.game-type-trigger svg {
+  width: 18px;
+  height: 18px;
+  color: #5b6472;
+  transition: transform 0.15s ease;
+}
+
+.game-type-trigger[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.game-type-menu {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 8px;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  border-radius: 14px;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+  display: grid;
+  gap: 4px;
+}
+
+.game-type-option {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #1f2937;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.game-type-option:hover {
+  background: rgba(31, 41, 55, 0.08);
+}
+
+.game-type-option.is-active {
+  background: rgba(245, 158, 11, 0.16);
+  font-weight: 600;
+}
+
+.game-type-option svg {
+  width: 16px;
+  height: 16px;
+  color: #9a5f0a;
 }
 
 .deck-game-type {
@@ -462,5 +600,14 @@ h1 {
 
   .deck-search-actions {
     grid-template-columns: 1fr;
+  }
+
+  .create-deck-modal-backdrop {
+    padding: 14px;
+  }
+
+  .create-deck-modal-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
