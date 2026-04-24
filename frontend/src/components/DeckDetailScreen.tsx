@@ -166,6 +166,12 @@ export function DeckDetailScreen({
     }
   };
 
+  const handleClearSearch = () => {
+    setSearchText('');
+    setSearchResults([]);
+    setEditorMessage('');
+  };
+
   return (
     <section className="deck-page-card">
       <header className="deck-editor-header">
@@ -211,9 +217,20 @@ export function DeckDetailScreen({
                 />
               </label>
 
-              <button type="submit" className="primary-button" disabled={isSearching}>
-                {isSearching ? 'Buscando...' : 'Buscar'}
-              </button>
+              <div className="deck-search-actions">
+                <button type="submit" className="primary-button" disabled={isSearching}>
+                  {isSearching ? 'Buscando...' : 'Buscar'}
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={isSearching || (searchText.trim().length === 0 && searchResults.length === 0)}
+                  onClick={handleClearSearch}
+                >
+                  Limpiar
+                </button>
+              </div>
             </form>
 
             <div className="card-grid">
