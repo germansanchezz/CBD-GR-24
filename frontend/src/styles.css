@@ -62,6 +62,10 @@ select {
 .hero-card {
   border-radius: 28px;
   padding: 28px;
+  text-align: left;
+}
+
+.auth-shell .hero-card {
   text-align: center;
 }
 
@@ -355,6 +359,9 @@ h1 {
   margin: 14px 0 0;
   color: #5b6472;
   max-width: 36ch;
+}
+
+.auth-shell .hero-copy {
   margin-inline: auto;
 }
 

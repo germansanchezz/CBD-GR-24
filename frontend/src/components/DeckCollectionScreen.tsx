@@ -3,7 +3,7 @@ import { createDeck, getDecks } from '../api/client';
 import { DECK_GAME_TYPE_OPTIONS, getDeckGameTypeLabel } from '../types';
 import type { AuthUser, Deck, DeckGameType } from '../types';
 import { DeckDetailScreen } from './DeckDetailScreen';
-import { FiCheck, FiChevronDown, FiPlus, FiUser, FiX } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiLogOut, FiPlus, FiX } from 'react-icons/fi';
 
 type DeckCollectionScreenProps = {
   currentUser: AuthUser;
@@ -206,7 +206,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
           onLogout();
         }}
       >
-        <FiUser aria-hidden="true" />
+        <FiLogOut aria-hidden="true" />
         Cerrar sesion
       </button>
 
