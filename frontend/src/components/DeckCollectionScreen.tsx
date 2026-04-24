@@ -3,6 +3,7 @@ import { createDeck, getDecks } from '../api/client';
 import { DECK_GAME_TYPE_OPTIONS, getDeckGameTypeLabel } from '../types';
 import type { AuthUser, Deck, DeckGameType } from '../types';
 import { DeckDetailScreen } from './DeckDetailScreen';
+import { FiPlus, FiUser } from 'react-icons/fi';
 
 type DeckCollectionScreenProps = {
   currentUser: AuthUser;
@@ -117,12 +118,13 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
 
         <button
           type="button"
-          className="primary-button"
+          className="primary-button icon-label-button"
           onClick={() => {
             setShowCreateDeckForm((currentValue) => !currentValue);
             setDeckErrorMessage('');
           }}
         >
+          <FiPlus aria-hidden="true" />
           {showCreateDeckForm ? 'Cancelar' : 'Nueva baraja'}
         </button>
       </header>
@@ -213,13 +215,14 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
     <main className="app-shell deck-shell">
       <button
         type="button"
-        className="logout-button"
+        className="logout-button icon-label-button"
         onClick={() => {
           setShowCreateDeckForm(false);
           setDeckErrorMessage('');
           onLogout();
         }}
       >
+        <FiUser aria-hidden="true" />
         Cerrar sesion
       </button>
 

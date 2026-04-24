@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { deleteDeck, searchCardsByGameType, updateDeck } from '../api/client';
 import { getDeckGameTypeLabel } from '../types';
 import type { Deck, DeckCard, TcgSearchCard } from '../types';
+import { FiPlus, FiMinus, FiSearch, FiX } from 'react-icons/fi';
 
 type DeckDetailScreenProps = {
   deck: Deck;
@@ -218,16 +219,18 @@ export function DeckDetailScreen({
               </label>
 
               <div className="deck-search-actions">
-                <button type="submit" className="primary-button" disabled={isSearching}>
+                <button type="submit" className="primary-button icon-label-button" disabled={isSearching}>
+                  <FiSearch aria-hidden="true" />
                   {isSearching ? 'Buscando...' : 'Buscar'}
                 </button>
 
                 <button
                   type="button"
-                  className="secondary-button"
+                  className="secondary-button icon-label-button"
                   disabled={isSearching || (searchText.trim().length === 0 && searchResults.length === 0)}
                   onClick={handleClearSearch}
                 >
+                  <FiX aria-hidden="true" />
                   Limpiar
                 </button>
               </div>
@@ -241,24 +244,28 @@ export function DeckDetailScreen({
                   <div className="quantity-controls">
                     <button
                       type="button"
-                      className="secondary-button"
+                      className="secondary-button quantity-icon-button"
                       disabled={isSavingCards || getQuantityInDeck(card.cardId) === 0}
                       onClick={() => {
                         void updateCardQuantity(card, -1);
                       }}
+                      aria-label={`Quitar una copia de ${card.name}`}
+                      title="Quitar una copia"
                     >
-                      -
+                      <FiMinus aria-hidden="true" />
                     </button>
                     <span className="quantity-value">{getQuantityInDeck(card.cardId)}</span>
                     <button
                       type="button"
-                      className="secondary-button"
+                      className="secondary-button quantity-icon-button"
                       disabled={isSavingCards}
                       onClick={() => {
                         void updateCardQuantity(card, 1);
                       }}
+                      aria-label={`Añadir una copia de ${card.name}`}
+                      title="Añadir una copia"
                     >
-                      +
+                      <FiPlus aria-hidden="true" />
                     </button>
                   </div>
                 </article>
@@ -280,24 +287,28 @@ export function DeckDetailScreen({
                   <div className="quantity-controls">
                     <button
                       type="button"
-                      className="secondary-button"
+                      className="secondary-button quantity-icon-button"
                       disabled={isSavingCards}
                       onClick={() => {
                         void updateCardQuantity(card, -1);
                       }}
+                      aria-label={`Quitar una copia de ${card.name}`}
+                      title="Quitar una copia"
                     >
-                      -
+                      <FiMinus aria-hidden="true" />
                     </button>
                     <span className="quantity-value">{card.quantity}</span>
                     <button
                       type="button"
-                      className="secondary-button"
+                      className="secondary-button quantity-icon-button"
                       disabled={isSavingCards}
                       onClick={() => {
                         void updateCardQuantity(card, 1);
                       }}
+                      aria-label={`Añadir una copia de ${card.name}`}
+                      title="Añadir una copia"
                     >
-                      +
+                      <FiPlus aria-hidden="true" />
                     </button>
                   </div>
                 </article>

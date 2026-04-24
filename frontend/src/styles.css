@@ -214,6 +214,18 @@ select {
   gap: 10px;
 }
 
+.icon-label-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.icon-label-button svg {
+  width: 18px;
+  height: 18px;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -259,6 +271,20 @@ select {
 
 .quantity-controls .secondary-button {
   padding: 8px 12px;
+}
+
+.quantity-icon-button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantity-icon-button svg {
+  width: 18px;
+  height: 18px;
 }
 
 .eyebrow {
