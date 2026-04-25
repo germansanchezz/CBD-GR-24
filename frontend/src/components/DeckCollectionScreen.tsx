@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { createDeck, getDecks } from '../api/client';
+import { createDeck, getDecks, getUserCardsStats } from '../api/client';
 import { DECK_GAME_TYPE_OPTIONS, getDeckGameTypeLabel } from '../types';
-import type { AuthUser, Deck, DeckGameType } from '../types';
+import type { AuthUser, Deck, DeckGameType, UserCardsStats } from '../types';
 import { DeckDetailScreen } from './DeckDetailScreen';
 import { FiCheck, FiChevronDown, FiLogOut, FiPlus, FiX } from 'react-icons/fi';
 
@@ -14,6 +14,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
   const [decks, setDecks] = useState<Deck[]>([]);
   const [isDecksLoading, setIsDecksLoading] = useState(false);
   const [deckErrorMessage, setDeckErrorMessage] = useState('');
+  const [activeTab, setActiveTab] = useState<'decks' | 'collection'>('decks');
   const [showCreateDeckForm, setShowCreateDeckForm] = useState(false);
   const [newDeckName, setNewDeckName] = useState('');
   const [newDeckDescription, setNewDeckDescription] = useState('');
@@ -21,6 +22,8 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
   const [isGameTypeMenuOpen, setIsGameTypeMenuOpen] = useState(false);
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   const [openedDeckId, setOpenedDeckId] = useState<string | null>(null);
+  const [collectionStats, setCollectionStats] = useState<UserCardsStats | null>(null);
+  const [isCollectionStatsLoading, setIsCollectionStatsLoading] = useState(false);
   const gameTypeMenuRef = useRef<HTMLDivElement | null>(null);
 
   const userId = currentUser.id;
@@ -32,17 +35,24 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
   useEffect(() => {
     if (!userId) {
       setDecks([]);
+      setCollectionStats(null);
       setDeckErrorMessage('El usuario actual no tiene id para cargar barajas.');
       return;
     }
 
-    const loadDecks = async () => {
+    const loadDecksAndCollectionStats = async () => {
       setIsDecksLoading(true);
+      setIsCollectionStatsLoading(true);
       setDeckErrorMessage('');
 
       try {
-        const loadedDecks = await getDecks(userId);
+        const [loadedDecks, loadedCollectionStats] = await Promise.all([
+          getDecks(userId),
+          getUserCardsStats({ userId }),
+        ]);
+
         setDecks(loadedDecks);
+        setCollectionStats(loadedCollectionStats);
         setOpenedDeckId((currentId) => {
           if (currentId && loadedDecks.some((deck) => deck.id === currentId)) {
             return currentId;
@@ -58,11 +68,25 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
         }
       } finally {
         setIsDecksLoading(false);
+        setIsCollectionStatsLoading(false);
       }
     };
 
-    void loadDecks();
+    void loadDecksAndCollectionStats();
   }, [userId]);
+
+  const reloadCollectionStats = async () => {
+    if (!userId) {
+      return;
+    }
+
+    try {
+      const loadedCollectionStats = await getUserCardsStats({ userId });
+      setCollectionStats(loadedCollectionStats);
+    } catch {
+      // Keep deck interactions responsive even if stats refresh fails.
+    }
+  };
 
   useEffect(() => {
     if (!showCreateDeckForm) {
@@ -140,57 +164,139 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
       <header className="deck-header">
         <div>
           <p className="eyebrow">DeckBuilder</p>
-          <h1 className="deck-title">Coleccion de barajas</h1>
+          <h1 className="deck-title">{activeTab === 'decks' ? 'Coleccion de barajas' : 'Mi coleccion'}</h1>
           <p className="hero-copy">Bienvenido, {userName}.</p>
         </div>
 
+        {activeTab === 'decks' && (
+          <button
+            type="button"
+            className="primary-button icon-label-button"
+            onClick={() => {
+              setShowCreateDeckForm(true);
+              setDeckErrorMessage('');
+            }}
+          >
+            <FiPlus aria-hidden="true" />
+            Nueva baraja
+          </button>
+        )}
+      </header>
+
+      <div className="dashboard-tabs" role="tablist" aria-label="Vistas principales">
         <button
           type="button"
-          className="primary-button icon-label-button"
+          role="tab"
+          aria-selected={activeTab === 'decks'}
+          className={`dashboard-tab ${activeTab === 'decks' ? 'is-active' : ''}`}
           onClick={() => {
-            setShowCreateDeckForm(true);
+            setActiveTab('decks');
+            setShowCreateDeckForm(false);
             setDeckErrorMessage('');
           }}
         >
-          <FiPlus aria-hidden="true" />
-          Nueva baraja
+          <span className="dashboard-tab-label">Barajas</span>
         </button>
-      </header>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'collection'}
+          className={`dashboard-tab ${activeTab === 'collection' ? 'is-active' : ''}`}
+          onClick={() => {
+            setActiveTab('collection');
+            setShowCreateDeckForm(false);
+            setDeckErrorMessage('');
+          }}
+        >
+          <span className="dashboard-tab-label">Mi coleccion</span>
+        </button>
+      </div>
 
-      {deckErrorMessage && !showCreateDeckForm && <p className="error-message">{deckErrorMessage}</p>}
+      {deckErrorMessage && !showCreateDeckForm && activeTab === 'decks' && <p className="error-message">{deckErrorMessage}</p>}
 
-      {isDecksLoading ? (
-        <p className="deck-state-text">Cargando barajas...</p>
-      ) : decks.length === 0 ? (
-        <p className="deck-state-text">No tienes barajas todavia. Crea la primera.</p>
+      {activeTab === 'decks' ? (
+        isDecksLoading ? (
+          <p className="deck-state-text">Cargando barajas...</p>
+        ) : decks.length === 0 ? (
+          <p className="deck-state-text">No tienes barajas todavia. Crea la primera.</p>
+        ) : (
+          <ul className="deck-list">
+            {decks.map((deck) => (
+              <li key={deck.id ?? `${deck.name}-${deck.createdAtUtc}`} className="deck-list-item">
+                <div>
+                  <h2>{deck.name}</h2>
+                  <p>{deck.description || 'Sin descripcion'}</p>
+                  <p className="deck-game-type">
+                    {getDeckGameTypeLabel(deck.gameType)}
+                  </p>
+                </div>
+                <div className="deck-item-actions">
+                  <span className="deck-meta">
+                    {deck.cards.reduce((sum, card) => sum + card.quantity, 0)} cartas
+                  </span>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => {
+                      openDeckDetail(deck.id ?? null);
+                    }}
+                  >
+                    Abrir baraja
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
       ) : (
-        <ul className="deck-list">
-          {decks.map((deck) => (
-            <li key={deck.id ?? `${deck.name}-${deck.createdAtUtc}`} className="deck-list-item">
+        <section className="collection-stats-panel">
+          <header className="collection-stats-header">
+            <h2>Mi coleccion</h2>
+          </header>
+
+          {isCollectionStatsLoading ? (
+            <p className="deck-state-text">Cargando estadisticas...</p>
+          ) : !collectionStats ? (
+            <p className="deck-state-text">No se pudieron cargar las estadisticas.</p>
+          ) : (
+            <>
+              <div className="collection-stats-grid">
+                <article className="collection-stat-card">
+                  <h3>{collectionStats.totalUniqueCards}</h3>
+                  <p>Cartas unicas</p>
+                </article>
+                <article className="collection-stat-card">
+                  <h3>{collectionStats.totalOwnedCopies}</h3>
+                  <p>Copias totales</p>
+                </article>
+                <article className="collection-stat-card">
+                  <h3>{collectionStats.distinctSets}</h3>
+                  <p>Sets distintos</p>
+                </article>
+                <article className="collection-stat-card">
+                  <h3>{collectionStats.averageCopiesPerCard}</h3>
+                  <p>Media copias/carta</p>
+                </article>
+              </div>
+
               <div>
-                <h2>{deck.name}</h2>
-                <p>{deck.description || 'Sin descripcion'}</p>
-                <p className="deck-game-type">
-                  {getDeckGameTypeLabel(deck.gameType)}
-                </p>
+                <h3 className="deck-editor-subtitle">Top cartas guardadas</h3>
+                {collectionStats.topCards.length === 0 ? (
+                  <p className="deck-state-text">Aun no hay cartas en tu coleccion.</p>
+                ) : (
+                  <ul className="collection-top-list">
+                    {collectionStats.topCards.map((card) => (
+                      <li key={`${card.gameType}-${card.externalCardId}`}>
+                        <span>{card.name}</span>
+                        <span className="deck-meta">{card.totalOwnedCopies} copias</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              <div className="deck-item-actions">
-                <span className="deck-meta">
-                  {deck.cards.reduce((sum, card) => sum + card.quantity, 0)} cartas
-                </span>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => {
-                    openDeckDetail(deck.id ?? null);
-                  }}
-                >
-                  Abrir baraja
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+            </>
+          )}
+        </section>
       )}
 
     </section>
@@ -219,10 +325,12 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
           }}
           onDeckUpdated={(updatedDeck) => {
             setDecks((currentDecks) => currentDecks.map((deck) => (deck.id === updatedDeck.id ? updatedDeck : deck)));
+            void reloadCollectionStats();
           }}
             onDeckDeleted={(deletedDeckId) => {
               setDecks((currentDecks) => currentDecks.filter((deck) => deck.id !== deletedDeckId));
               openDeckDetail(null);
+              void reloadCollectionStats();
             }}
         />
       ) : renderDeckCollection()}

@@ -95,6 +95,55 @@ select {
   gap: 18px;
 }
 
+.dashboard-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.72) 100%),
+    radial-gradient(circle at top left, rgba(251, 191, 36, 0.12), transparent 45%);
+  border: 1px solid rgba(31, 41, 55, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.dashboard-tab {
+  border: 0;
+  border-radius: 13px;
+  padding: 12px 14px;
+  cursor: pointer;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.58);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard-tab:hover {
+  background: rgba(255, 255, 255, 0.88);
+  transform: translateY(-1px);
+}
+
+.dashboard-tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+}
+
+.dashboard-tab.is-active {
+  background: #1f2937;
+  color: #f8fafc;
+  box-shadow: 0 10px 24px rgba(31, 41, 55, 0.24);
+}
+
+.dashboard-tab-label {
+  letter-spacing: 0.01em;
+}
+
 .deck-title {
   margin: 0;
   font-size: clamp(1.9rem, 4.8vw, 3rem);
@@ -173,6 +222,66 @@ select {
   padding: 0;
   display: grid;
   gap: 12px;
+}
+
+.collection-stats-panel {
+  display: grid;
+  gap: 14px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(31, 41, 55, 0.1);
+}
+
+.collection-stats-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.collection-stats-header p {
+  margin-top: 8px;
+}
+
+.collection-stats-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.collection-stat-card {
+  margin: 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(31, 41, 55, 0.12);
+}
+
+.collection-stat-card h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.collection-stat-card p {
+  margin: 4px 0 0;
+  color: #66707e;
+  font-size: 0.88rem;
+}
+
+.collection-top-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.collection-top-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 41, 55, 0.1);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .deck-list-item {
@@ -591,6 +700,10 @@ h1 {
   .deck-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .dashboard-tabs {
+    grid-template-columns: 1fr;
   }
 
   .deck-list-item {

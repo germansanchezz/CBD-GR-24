@@ -1,4 +1,13 @@
-import type { AuthMode, AuthUser, Deck, DeckCard, DeckGameType, TcgSearchCard } from '../types';
+import type {
+  AuthMode,
+  AuthUser,
+  Deck,
+  DeckCard,
+  DeckGameType,
+  TcgSearchCard,
+  UserCard,
+  UserCardsStats,
+} from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
 
@@ -148,4 +157,67 @@ export async function searchCardsByGameType(args: {
   }
 
   return await response.json() as TcgSearchCard[];
+}
+
+export async function saveUserCardFromSearchResult(args: {
+  userId: string;
+  gameType: DeckGameType;
+  card: TcgSearchCard;
+  quantityOwned?: number;
+}): Promise<UserCard> {
+  const response = await fetch(`${API_BASE_URL}/api/user-cards`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': args.userId,
+    },
+    body: JSON.stringify({
+      gameType: args.gameType,
+      externalCardId: args.card.cardId,
+      name: args.card.name,
+      imageUrl: args.card.imageUrl,
+      setName: '',
+      rarity: '',
+      typeLine: '',
+      searchTags: [],
+      mainText: '',
+      stats: {
+        attack: null,
+        defense: null,
+        hp: null,
+        cost: null,
+        level: null,
+        colors: [],
+        attribute: '',
+      },
+      quantityOwned: args.quantityOwned ?? 1,
+    }),
+  });
+
+  if (!response.ok) {
+    const message = await readApiErrorMessage(response, 'No se pudo guardar la carta en la coleccion.');
+    throw new Error(message);
+  }
+
+  return await response.json() as UserCard;
+}
+
+export async function getUserCardsStats(args: {
+  userId: string;
+  gameType?: DeckGameType;
+}): Promise<UserCardsStats> {
+  const query = args.gameType ? `?gameType=${args.gameType}` : '';
+
+  const response = await fetch(`${API_BASE_URL}/api/user-cards/stats${query}`, {
+    headers: {
+      'X-User-Id': args.userId,
+    },
+  });
+
+  if (!response.ok) {
+    const message = await readApiErrorMessage(response, 'No se pudieron cargar las estadisticas de la coleccion.');
+    throw new Error(message);
+  }
+
+  return await response.json() as UserCardsStats;
 }

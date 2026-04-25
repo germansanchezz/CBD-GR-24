@@ -40,3 +40,55 @@ export type TcgSearchCard = {
   name: string;
   imageUrl: string;
 };
+
+export type UserCardStats = {
+  attack?: number | null;
+  defense?: number | null;
+  hp?: number | null;
+  cost?: number | null;
+  level?: number | null;
+  colors: string[];
+  attribute: string;
+};
+
+export type UserCard = {
+  id?: string;
+  userId: string;
+  gameType: DeckGameType;
+  externalCardId: string;
+  name: string;
+  imageUrl: string;
+  setName: string;
+  rarity: string;
+  typeLine: string;
+  searchTags: string[];
+  mainText: string;
+  stats: UserCardStats;
+  quantityOwned: number;
+  quantityInDecks: number;
+  addedAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export type UserCardsByFieldStat = {
+  label: string;
+  totalOwnedCopies: number;
+};
+
+export type UserCardsTopCardStat = {
+  externalCardId: string;
+  name: string;
+  gameType: string;
+  totalOwnedCopies: number;
+};
+
+export type UserCardsStats = {
+  totalUniqueCards: number;
+  totalOwnedCopies: number;
+  distinctSets: number;
+  averageCopiesPerCard: number;
+  gameTypeDistribution: UserCardsByFieldStat[];
+  rarityDistribution: UserCardsByFieldStat[];
+  setDistribution: UserCardsByFieldStat[];
+  topCards: UserCardsTopCardStat[];
+};

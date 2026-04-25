@@ -1,4 +1,5 @@
 using CBD.Api.Contracts.UserCards;
+using CBD.Api.Data;
 using CBD.Api.Helpers;
 using CBD.Api.Models;
 using CBD.Api.Options;
@@ -28,6 +29,8 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         {
             return authError!;
         }
+
+        await UserCardsDeckUsageSynchronizer.SynchronizeForUserAsync(mongoClient, options.Value, userId);
 
         var filter = Builders<UserCard>.Filter.Eq(card => card.UserId, userId);
 
@@ -110,6 +113,8 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         {
             return authError!;
         }
+
+        await UserCardsDeckUsageSynchronizer.SynchronizeForUserAsync(mongoClient, options.Value, userId);
 
         if (minQuantityOwned is < 0 || maxQuantityOwned is < 0)
         {

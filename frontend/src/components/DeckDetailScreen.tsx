@@ -1,8 +1,8 @@
 import { FormEvent, useState } from 'react';
-import { deleteDeck, searchCardsByGameType, updateDeck } from '../api/client';
+import { deleteDeck, saveUserCardFromSearchResult, searchCardsByGameType, updateDeck } from '../api/client';
 import { getDeckGameTypeLabel } from '../types';
 import type { Deck, DeckCard, TcgSearchCard } from '../types';
-import { FiPlus, FiMinus, FiSearch, FiX } from 'react-icons/fi';
+import { FiPlus, FiMinus, FiSearch, FiX, FiArchive } from 'react-icons/fi';
 
 type DeckDetailScreenProps = {
   deck: Deck;
@@ -24,6 +24,7 @@ export function DeckDetailScreen({
   const [searchResults, setSearchResults] = useState<TcgSearchCard[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSavingCards, setIsSavingCards] = useState(false);
+  const [isSavingToCollection, setIsSavingToCollection] = useState(false);
   const [editorMessage, setEditorMessage] = useState('');
 
   const getTotalCards = (cards: DeckCard[]) => cards.reduce((sum, card) => sum + card.quantity, 0);
@@ -173,6 +174,29 @@ export function DeckDetailScreen({
     setEditorMessage('');
   };
 
+  const handleSaveToCollection = async (card: TcgSearchCard) => {
+    setIsSavingToCollection(true);
+    setEditorMessage('');
+
+    try {
+      await saveUserCardFromSearchResult({
+        userId,
+        gameType: deck.gameType,
+        card,
+        quantityOwned: 1,
+      });
+      setEditorMessage(`Carta "${card.name}" guardada en coleccion.`);
+    } catch (error) {
+      if (error instanceof Error) {
+        setEditorMessage(error.message);
+      } else {
+        setEditorMessage('No se pudo guardar la carta en la coleccion.');
+      }
+    } finally {
+      setIsSavingToCollection(false);
+    }
+  };
+
   return (
     <section className="deck-page-card">
       <header className="deck-editor-header">
@@ -241,6 +265,17 @@ export function DeckDetailScreen({
                 <article key={card.cardId} className="card-item">
                   <img src={card.imageUrl} alt={card.name} loading="lazy" />
                   <p>{card.name}</p>
+                  <button
+                    type="button"
+                    className="secondary-button icon-label-button"
+                    disabled={isSavingToCollection}
+                    onClick={() => {
+                      void handleSaveToCollection(card);
+                    }}
+                  >
+                    <FiArchive aria-hidden="true" />
+                    Guardar en coleccion
+                  </button>
                   <div className="quantity-controls">
                     <button
                       type="button"
