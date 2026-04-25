@@ -41,17 +41,10 @@ public sealed class UserCard
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 }
 
+[BsonIgnoreExtraElements]
 public sealed class UserCardStats
 {
-    public int? Attack { get; set; }
-
-    public int? Defense { get; set; }
-
     public int? Hp { get; set; }
-
-    public decimal? Cost { get; set; }
-
-    public int? Level { get; set; }
 
     public List<string> Colors { get; set; } = [];
 

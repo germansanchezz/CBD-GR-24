@@ -14,10 +14,6 @@ public sealed record UpsertUserCardRequest(
     int QuantityOwned = 1);
 
 public sealed record UserCardStatsRequest(
-    int? Attack,
-    int? Defense,
     int? Hp,
-    decimal? Cost,
-    int? Level,
     List<string>? Colors,
     string? Attribute);
