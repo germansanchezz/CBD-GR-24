@@ -459,6 +459,82 @@ select {
   font-weight: 600;
 }
 
+.card-properties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.card-property-tag {
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(31, 41, 55, 0.08);
+  color: #334155;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.deck-filter-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(31, 41, 55, 0.1);
+}
+
+.deck-filter-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.deck-filter-panel-header .deck-editor-subtitle {
+  margin-bottom: 4px;
+}
+
+.deck-filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.deck-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  cursor: pointer;
+  user-select: none;
+}
+
+.deck-filter-chip input {
+  margin: 0;
+}
+
+.deck-filter-chip.is-selected {
+  background: rgba(31, 41, 55, 0.08);
+  border-color: rgba(31, 41, 55, 0.22);
+}
+
+.deck-filter-chip-count {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  padding: 0 7px;
+  background: #1f2937;
+  color: #f8fafc;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .quantity-controls {
   display: flex;
   align-items: center;

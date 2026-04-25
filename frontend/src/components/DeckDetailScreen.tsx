@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { deleteDeck, searchCardsByGameType, updateDeck } from '../api/client';
 import { getDeckGameTypeLabel } from '../types';
@@ -31,11 +31,16 @@ export function DeckDetailScreen({
   const [isSavingDeckMetadata, setIsSavingDeckMetadata] = useState(false);
   const [editDeckErrorMessage, setEditDeckErrorMessage] = useState('');
   const [editorMessage, setEditorMessage] = useState('');
+  const [selectedPropertyFilters, setSelectedPropertyFilters] = useState<string[]>([]);
 
   useEffect(() => {
     setDeckName(deck.name);
     setDeckDescription(deck.description);
   }, [deck.description, deck.id, deck.name]);
+
+  useEffect(() => {
+    setSelectedPropertyFilters([]);
+  }, [deck.id]);
 
   const getTotalCards = (cards: DeckCard[]) => cards.reduce((sum, card) => sum + card.quantity, 0);
 
@@ -45,6 +50,32 @@ export function DeckDetailScreen({
 
   const getQuantityInDeck = (cardId: string) => deck.cards.find((card) => card.cardId === cardId)?.quantity ?? 0;
   const maxCopiesPerName = deck.gameType === 'yugioh' ? 3 : 4;
+  const availableProperties = useMemo(() => {
+    const allProperties = deck.cards.flatMap((card) => card.properties ?? []);
+    return Array.from(new Set(allProperties)).sort((left, right) => left.localeCompare(right, 'es'));
+  }, [deck.cards]);
+
+  const filteredDeckCards = useMemo(() => {
+    if (isSearchOpen || selectedPropertyFilters.length === 0) {
+      return deck.cards;
+    }
+
+    const selectedFilters = new Set(selectedPropertyFilters);
+    return deck.cards.filter((card) => card.properties?.some((property) => selectedFilters.has(property)) ?? false);
+  }, [deck.cards, isSearchOpen, selectedPropertyFilters]);
+
+  const propertyFilterCounters = useMemo(() => {
+    const counters = new Map<string, number>();
+
+    for (const property of availableProperties) {
+      const matchingCopies = deck.cards
+        .filter((card) => card.properties?.includes(property) ?? false)
+        .reduce((sum, card) => sum + card.quantity, 0);
+      counters.set(property, matchingCopies);
+    }
+
+    return counters;
+  }, [availableProperties, deck.cards]);
 
   const persistCards = async (nextCards: DeckCard[]) => {
     if (!deck.id) {
@@ -187,6 +218,7 @@ export function DeckDetailScreen({
           cardId: card.cardId,
           name: card.name,
           imageUrl: card.imageUrl,
+          properties: card.properties ?? [],
           quantity: 1,
         });
       }
@@ -240,6 +272,18 @@ export function DeckDetailScreen({
     setSearchText('');
     setSearchResults([]);
     setEditorMessage('');
+  };
+
+  const togglePropertyFilter = (property: string) => {
+    setSelectedPropertyFilters((currentFilters) => (
+      currentFilters.includes(property)
+        ? currentFilters.filter((currentProperty) => currentProperty !== property)
+        : [...currentFilters, property]
+    ));
+  };
+
+  const clearPropertyFilters = () => {
+    setSelectedPropertyFilters([]);
   };
 
   return (
@@ -359,16 +403,79 @@ export function DeckDetailScreen({
           </div>
         )}
 
+        {!isSearchOpen && (
+          <section className="deck-filter-panel">
+            <div className="deck-filter-panel-header">
+              <div>
+                <h3 className="deck-editor-subtitle">Filtros de visualizacion</h3>
+                <p className="deck-state-text">
+                  Marca una o varias propiedades para mostrar solo las cartas que coinciden.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={clearPropertyFilters}
+                disabled={selectedPropertyFilters.length === 0}
+              >
+                Limpiar filtros
+              </button>
+            </div>
+
+            {availableProperties.length === 0 ? (
+              <p className="deck-state-text">Aun no hay propiedades disponibles para filtrar en esta baraja.</p>
+            ) : (
+              <div className="deck-filter-grid" role="group" aria-label="Filtros de propiedades de la baraja">
+                {availableProperties.map((property) => {
+                  const isSelected = selectedPropertyFilters.includes(property);
+                  const matchingCopies = propertyFilterCounters.get(property) ?? 0;
+
+                  return (
+                    <label key={property} className={`deck-filter-chip ${isSelected ? 'is-selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => { togglePropertyFilter(property); }}
+                      />
+                      <span>{property}</span>
+                      <span className="deck-filter-chip-count">{matchingCopies}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
         <div>
           <h3 className="deck-editor-subtitle">Cartas en la baraja</h3>
+
+          {!isSearchOpen && selectedPropertyFilters.length > 0 && (
+            <p className="deck-state-text">
+              Mostrando {filteredDeckCards.length} de {deck.cards.length} cartas para los filtros seleccionados.
+            </p>
+          )}
+
           {deck.cards.length === 0 ? (
             <p className="deck-state-text">Todavia no hay cartas en esta baraja.</p>
+          ) : filteredDeckCards.length === 0 ? (
+            <p className="deck-state-text">No hay cartas que coincidan con los filtros seleccionados.</p>
           ) : (
             <div className="card-grid">
-              {deck.cards.map((card) => (
+              {filteredDeckCards.map((card) => (
                 <article key={card.cardId} className="card-item">
                   <img src={card.imageUrl} alt={card.name} loading="lazy" />
                   <p>{card.name}</p>
+                  {card.properties.length > 0 && (
+                    <div className="card-properties">
+                      {card.properties.map((property) => (
+                        <span key={property} className="card-property-tag">
+                          {property}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <div className="quantity-controls">
                     <button
                       type="button"

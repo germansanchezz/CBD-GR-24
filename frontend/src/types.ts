@@ -33,12 +33,14 @@ export type DeckCard = {
   name: string;
   imageUrl: string;
   quantity: number;
+  properties: string[];
 };
 
 export type TcgSearchCard = {
   cardId: string;
   name: string;
   imageUrl: string;
+  properties: string[];
 };
 
 export type UserCard = {
