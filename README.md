@@ -169,36 +169,6 @@ Para `/api/decks`, envía la cabecera `X-User-Id` con el `id` devuelto por login
 
 Para `/api/user-cards` y `/api/user-cards/stats`, también debes enviar `X-User-Id`.
 
-### Ejemplo rápido: guardar carta en colección
-
-```powershell
-$headers = @{ "X-User-Id" = "<USER_ID>"; "Content-Type" = "application/json" }
-$body = @"
-{
-    "gameType": "pokemon",
-    "externalCardId": "xy7-54",
-    "name": "Gardevoir",
-    "imageUrl": "https://.../high.webp",
-    "setName": "Ancient Origins",
-    "rarity": "Rare Holo",
-    "typeLine": "Pokemon",
-    "searchTags": ["psychic", "stage2"],
-    "mainText": "Brilliant Arrow",
-    "stats": { "hp": 130, "attack": 0, "defense": 0, "cost": 0, "level": null, "colors": ["psychic"], "attribute": "" },
-    "quantityOwned": 1
-}
-"@
-
-Invoke-RestMethod -Method Post -Uri http://localhost:5000/api/user-cards -Headers $headers -Body $body
-```
-
-### Ejemplo rápido: estadísticas de colección
-
-```powershell
-$headers = @{ "X-User-Id" = "<USER_ID>" }
-Invoke-RestMethod -Method Get -Uri "http://localhost:5000/api/user-cards/stats?gameType=pokemon" -Headers $headers
-```
-
 ## Despliegue en Render (paso a paso)
 
 ## 1) Backend (Web Service)

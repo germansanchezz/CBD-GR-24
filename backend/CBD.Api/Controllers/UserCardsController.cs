@@ -14,6 +14,12 @@ namespace CBD.Api.Controllers;
 [Route("api/user-cards")]
 public sealed class UserCardsController(IMongoClient mongoClient, IOptions<MongoDbOptions> options) : ControllerBase
 {
+    private const int MaxTextFieldLength = 200;
+    private const int MaxMainTextLength = 3000;
+    private const int MaxSearchTagsCount = 25;
+    private const int MaxTagLength = 40;
+    private const int MaxQuantityOwned = 999;
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetUserCardsStats([FromQuery] string? gameType)
     {
@@ -162,6 +168,39 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         if (request.QuantityOwned <= 0)
         {
             return BadRequest(new { message = "quantityOwned debe ser mayor que 0." });
+        }
+
+        if (request.QuantityOwned > MaxQuantityOwned)
+        {
+            return BadRequest(new { message = $"quantityOwned no puede superar {MaxQuantityOwned}." });
+        }
+
+        if (request.ExternalCardId.Trim().Length > MaxTextFieldLength ||
+            request.Name.Trim().Length > MaxTextFieldLength ||
+            request.ImageUrl.Trim().Length > 1000 ||
+            (request.SetName?.Trim().Length ?? 0) > MaxTextFieldLength ||
+            (request.Rarity?.Trim().Length ?? 0) > MaxTextFieldLength ||
+            (request.TypeLine?.Trim().Length ?? 0) > MaxTextFieldLength)
+        {
+            return BadRequest(new { message = "Uno o varios campos de texto superan el tamano permitido." });
+        }
+
+        if ((request.MainText?.Length ?? 0) > MaxMainTextLength)
+        {
+            return BadRequest(new { message = $"mainText no puede superar {MaxMainTextLength} caracteres." });
+        }
+
+        if (request.SearchTags is not null)
+        {
+            if (request.SearchTags.Count > MaxSearchTagsCount)
+            {
+                return BadRequest(new { message = $"searchTags no puede superar {MaxSearchTagsCount} elementos." });
+            }
+
+            if (request.SearchTags.Any(tag => (tag?.Trim().Length ?? 0) > MaxTagLength))
+            {
+                return BadRequest(new { message = $"Cada tag no puede superar {MaxTagLength} caracteres." });
+            }
         }
 
         var now = DateTime.UtcNow;
