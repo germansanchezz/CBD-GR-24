@@ -128,6 +128,7 @@ public sealed class DecksController(IMongoClient mongoClient, IOptions<MongoDbOp
                 CardId = card.CardId.Trim(),
                 Name = card.Name.Trim(),
                 ImageUrl = card.ImageUrl.Trim(),
+                Properties = card.Properties?.Where(property => !string.IsNullOrWhiteSpace(property)).Select(property => property.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList() ?? [],
                 Quantity = card.Quantity
             })
             .ToList();
