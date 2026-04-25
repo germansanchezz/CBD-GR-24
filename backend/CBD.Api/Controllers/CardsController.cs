@@ -59,20 +59,15 @@ public sealed class CardsController(IHttpClientFactory httpClientFactory) : Cont
                 continue;
             }
 
-            var imageBase = card.Image;
-
-            if (string.IsNullOrWhiteSpace(imageBase))
-            {
-                var details = await httpClient.GetFromJsonAsync<TcgDexCardDetail>($"https://api.tcgdex.net/v2/es/cards/{card.Id}", cancellationToken);
-                imageBase = details?.Image;
-            }
+            var details = await httpClient.GetFromJsonAsync<TcgDexCardDetail>($"https://api.tcgdex.net/v2/es/cards/{card.Id}", cancellationToken);
+            var imageBase = card.Image ?? details?.Image;
 
             if (string.IsNullOrWhiteSpace(imageBase))
             {
                 continue;
             }
 
-            results.Add(new CardSearchResultResponse(card.Id, card.Name, $"{imageBase}/high.webp"));
+            results.Add(new CardSearchResultResponse(card.Id, card.Name, $"{imageBase}/high.webp", BuildPokemonProperties(details)));
         }
 
         return results;
@@ -112,7 +107,7 @@ public sealed class CardsController(IHttpClientFactory httpClientFactory) : Cont
                 }
 
                 var displayName = string.IsNullOrWhiteSpace(card.PrintedName) ? card.Name : card.PrintedName;
-                return new CardSearchResultResponse(card.Id, displayName, imageUrl);
+                return new CardSearchResultResponse(card.Id, displayName, imageUrl, BuildMagicProperties(card));
             })
             .Where(card => card is not null)
             .Cast<CardSearchResultResponse>()
@@ -138,10 +133,93 @@ public sealed class CardsController(IHttpClientFactory httpClientFactory) : Cont
                     return null;
                 }
 
-                return new CardSearchResultResponse(card.Id.ToString(), card.Name, imageUrl);
+                return new CardSearchResultResponse(card.Id.ToString(), card.Name, imageUrl, BuildYugiohProperties(card));
             })
             .Where(card => card is not null)
             .Cast<CardSearchResultResponse>()
+            .ToList();
+    }
+
+    private static List<string> BuildPokemonProperties(TcgDexCardDetail? details)
+    {
+        var properties = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(details?.Category))
+        {
+            properties.Add(details.Category.Trim());
+        }
+
+        if (details?.Types is not null)
+        {
+            properties.AddRange(details.Types.Where(type => !string.IsNullOrWhiteSpace(type)).Select(type => type.Trim()));
+        }
+
+        return NormalizeProperties(properties);
+    }
+
+    private static List<string> BuildMagicProperties(ScryfallCard card)
+    {
+        var typeLine = string.IsNullOrWhiteSpace(card.PrintedTypeLine) ? card.TypeLine : card.PrintedTypeLine;
+        var properties = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(typeLine))
+        {
+            var separator = typeLine.Contains('—') ? '—' : typeLine.Contains('-') ? '-' : '\0';
+            var mainType = separator == '\0'
+                ? typeLine.Trim()
+                : typeLine.Split(separator, 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+
+            properties.Add(mainType);
+        }
+
+        if (card.Colors is null || card.Colors.Count == 0)
+        {
+            properties.Add("Incolora");
+        }
+        else
+        {
+            properties.AddRange(card.Colors.Select(MapMagicColor));
+        }
+
+        return NormalizeProperties(properties);
+    }
+
+    private static string MapMagicColor(string color)
+    {
+        return color.Trim().ToUpperInvariant() switch
+        {
+            "W" => "Blanco",
+            "U" => "Azul",
+            "B" => "Negro",
+            "R" => "Rojo",
+            "G" => "Verde",
+            _ => color.Trim(),
+        };
+    }
+
+    private static List<string> BuildYugiohProperties(YugiohCard card)
+    {
+        var properties = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(card.Type))
+        {
+            properties.Add(card.Type.Trim());
+        }
+
+        if (card.Type.Contains("Monster", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(card.Attribute))
+        {
+            properties.Add(card.Attribute.Trim());
+        }
+
+        return NormalizeProperties(properties);
+    }
+
+    private static List<string> NormalizeProperties(IEnumerable<string> properties)
+    {
+        return properties
+            .Where(property => !string.IsNullOrWhiteSpace(property))
+            .Select(property => property.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
@@ -161,6 +239,12 @@ public sealed class CardsController(IHttpClientFactory httpClientFactory) : Cont
     {
         [JsonPropertyName("image")]
         public string? Image { get; set; }
+
+        [JsonPropertyName("category")]
+        public string? Category { get; set; }
+
+        [JsonPropertyName("types")]
+        public List<string>? Types { get; set; }
     }
 
     private sealed class ScryfallSearchResponse
@@ -182,6 +266,15 @@ public sealed class CardsController(IHttpClientFactory httpClientFactory) : Cont
 
         [JsonPropertyName("image_uris")]
         public ScryfallImageUris? ImageUris { get; set; }
+
+        [JsonPropertyName("colors")]
+        public List<string>? Colors { get; set; }
+
+        [JsonPropertyName("type_line")]
+        public string? TypeLine { get; set; }
+
+        [JsonPropertyName("printed_type_line")]
+        public string? PrintedTypeLine { get; set; }
 
         [JsonPropertyName("card_faces")]
         public List<ScryfallCardFace>? CardFaces { get; set; }
@@ -212,6 +305,12 @@ public sealed class CardsController(IHttpClientFactory httpClientFactory) : Cont
 
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("type")]
+        public string Type { get; set; } = string.Empty;
+
+        [JsonPropertyName("attribute")]
+        public string? Attribute { get; set; }
 
         [JsonPropertyName("card_images")]
         public List<YugiohCardImage>? CardImages { get; set; }
