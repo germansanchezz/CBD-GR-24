@@ -1,4 +1,5 @@
 using CBD.Api.Contracts.Decks;
+using CBD.Api.Data;
 using CBD.Api.Helpers;
 using CBD.Api.Models;
 using CBD.Api.Options;
@@ -86,6 +87,7 @@ public sealed class DecksController(IMongoClient mongoClient, IOptions<MongoDbOp
 
         var decksCollection = GetDecksCollection();
         await decksCollection.InsertOneAsync(deck);
+        await UserCardsDeckUsageSynchronizer.SynchronizeForUserAsync(mongoClient, options.Value, userId);
 
         return Created($"/api/decks/{deck.Id}", deck);
     }
@@ -132,6 +134,7 @@ public sealed class DecksController(IMongoClient mongoClient, IOptions<MongoDbOp
         existingDeck.UpdatedAtUtc = DateTime.UtcNow;
 
         await decksCollection.ReplaceOneAsync(deck => deck.Id == deckId, existingDeck);
+        await UserCardsDeckUsageSynchronizer.SynchronizeForUserAsync(mongoClient, options.Value, userId);
 
         return Ok(existingDeck);
     }
@@ -151,6 +154,11 @@ public sealed class DecksController(IMongoClient mongoClient, IOptions<MongoDbOp
 
         var decksCollection = GetDecksCollection();
         var result = await decksCollection.DeleteOneAsync(deck => deck.Id == deckId && deck.OwnerUserId == userId);
+
+        if (result.DeletedCount > 0)
+        {
+            await UserCardsDeckUsageSynchronizer.SynchronizeForUserAsync(mongoClient, options.Value, userId);
+        }
 
         return result.DeletedCount == 0
             ? NotFound(new { message = "Baraja no encontrada." })
