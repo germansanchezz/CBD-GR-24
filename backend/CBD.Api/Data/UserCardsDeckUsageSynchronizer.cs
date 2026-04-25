@@ -119,7 +119,6 @@ public static class UserCardsDeckUsageSynchronizer
                 TypeLine = string.Empty,
                 SearchTags = [],
                 MainText = string.Empty,
-                Stats = new UserCardStats(),
                 QuantityOwned = usage.QuantityInDecks,
                 QuantityInDecks = usage.QuantityInDecks,
                 AddedAtUtc = now,

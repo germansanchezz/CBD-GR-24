@@ -182,7 +182,7 @@ Desde la pestaña `Mi colección`:
 - `quantityOwned` > 0 y <= 999.
 - `searchTags` máximo 25 elementos.
 - Cada tag máximo 40 chars.
-- Si faltan campos de detalle (`setName`, `rarity`, `typeLine`, `mainText`, `searchTags`, `stats`), el backend intenta enriquecer desde APIs externas (TCGdex, Scryfall, YGOPRODeck).
+- Si faltan campos de detalle (`setName`, `rarity`, `typeLine`, `mainText`, `searchTags`), el backend intenta enriquecer desde APIs externas (TCGdex, Scryfall, YGOPRODeck).
 
 - `POST /api/user-cards/{userCardId}/quantity`
 - Ajusta copias con `delta` (positivo o negativo).

@@ -181,15 +181,6 @@ export async function saveUserCardFromSearchResult(args: {
       typeLine: '',
       searchTags: [],
       mainText: '',
-      stats: {
-        attack: null,
-        defense: null,
-        hp: null,
-        cost: null,
-        level: null,
-        colors: [],
-        attribute: '',
-      },
       quantityOwned: args.quantityOwned ?? 1,
     }),
   });

@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace CBD.Api.Models;
 
+[BsonIgnoreExtraElements]
 public sealed class UserCard
 {
     [BsonId]
@@ -30,8 +31,6 @@ public sealed class UserCard
 
     public string MainText { get; set; } = string.Empty;
 
-    public UserCardStats Stats { get; set; } = new();
-
     public int QuantityOwned { get; set; }
 
     public int QuantityInDecks { get; set; }
@@ -39,14 +38,4 @@ public sealed class UserCard
     public DateTime AddedAtUtc { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
-}
-
-[BsonIgnoreExtraElements]
-public sealed class UserCardStats
-{
-    public int? Hp { get; set; }
-
-    public List<string> Colors { get; set; } = [];
-
-    public string Attribute { get; set; } = string.Empty;
 }

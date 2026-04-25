@@ -41,16 +41,6 @@ export type TcgSearchCard = {
   imageUrl: string;
 };
 
-export type UserCardStats = {
-  attack?: number | null;
-  defense?: number | null;
-  hp?: number | null;
-  cost?: number | null;
-  level?: number | null;
-  colors: string[];
-  attribute: string;
-};
-
 export type UserCard = {
   id?: string;
   userId: string;
@@ -63,7 +53,6 @@ export type UserCard = {
   typeLine: string;
   searchTags: string[];
   mainText: string;
-  stats: UserCardStats;
   quantityOwned: number;
   quantityInDecks: number;
   addedAtUtc: string;

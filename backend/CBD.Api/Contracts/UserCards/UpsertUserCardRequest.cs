@@ -10,10 +10,4 @@ public sealed record UpsertUserCardRequest(
     string? TypeLine,
     List<string>? SearchTags,
     string? MainText,
-    UserCardStatsRequest? Stats,
     int QuantityOwned = 1);
-
-public sealed record UserCardStatsRequest(
-    int? Hp,
-    List<string>? Colors,
-    string? Attribute);

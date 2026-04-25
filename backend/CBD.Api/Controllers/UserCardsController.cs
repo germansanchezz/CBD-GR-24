@@ -242,7 +242,6 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
             }
         }
 
-        var requestStats = MapStats(request.Stats);
         var requestTags = NormalizeTags(request.SearchTags);
         var externalCardId = request.ExternalCardId.Trim();
 
@@ -250,8 +249,7 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
             || string.IsNullOrWhiteSpace(request.Rarity)
             || string.IsNullOrWhiteSpace(request.TypeLine)
             || string.IsNullOrWhiteSpace(request.MainText)
-            || requestTags.Count == 0
-            || IsStatsEmpty(requestStats);
+            || requestTags.Count == 0;
 
         var enriched = shouldEnrich
             ? await TryGetProviderEnrichmentAsync(normalizedGameType, externalCardId, cancellationToken)
@@ -265,7 +263,6 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         var typeLine = Clip(PickFirstNonEmpty(request.TypeLine, enriched?.TypeLine), MaxTextFieldLength);
         var mainText = Clip(PickFirstNonEmpty(request.MainText, enriched?.MainText), MaxMainTextLength);
         var tags = MergeTags(requestTags, enriched?.SearchTags);
-        var stats = MergeStats(requestStats, enriched?.Stats);
 
         var existingCard = await collection
             .Find(card => card.UserId == userId && card.GameType == normalizedGameType && card.ExternalCardId == externalCardId)
@@ -285,7 +282,6 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
                 TypeLine = typeLine,
                 SearchTags = tags,
                 MainText = mainText,
-                Stats = stats,
                 QuantityOwned = request.QuantityOwned,
                 QuantityInDecks = 0,
                 AddedAtUtc = now,
@@ -303,7 +299,6 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         existingCard.TypeLine = typeLine;
         existingCard.SearchTags = tags;
         existingCard.MainText = mainText;
-        existingCard.Stats = stats;
         existingCard.QuantityOwned += request.QuantityOwned;
         existingCard.UpdatedAtUtc = now;
 
@@ -391,21 +386,6 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         return database.GetCollection<UserCard>(options.Value.UserCardsCollectionName);
     }
 
-    private static UserCardStats MapStats(UserCardStatsRequest? stats)
-    {
-        if (stats is null)
-        {
-            return new UserCardStats();
-        }
-
-        return new UserCardStats
-        {
-            Hp = stats.Hp,
-            Colors = NormalizeTags(stats.Colors),
-            Attribute = stats.Attribute?.Trim() ?? string.Empty
-        };
-    }
-
     private static List<string> NormalizeTags(IEnumerable<string?>? tags)
     {
         if (tags is null)
@@ -451,7 +431,6 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
                 continue;
             }
 
-            var mergedStats = MergeStats(card.Stats ?? new UserCardStats(), enriched.Stats);
             var mergedTags = MergeTags(card.SearchTags, enriched.SearchTags);
             var setName = Clip(PickFirstNonEmpty(card.SetName, enriched.SetName), MaxTextFieldLength);
             var rarity = Clip(PickFirstNonEmpty(card.Rarity, enriched.Rarity), MaxTextFieldLength);
@@ -464,7 +443,6 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
                 .Set(existing => existing.TypeLine, typeLine)
                 .Set(existing => existing.MainText, mainText)
                 .Set(existing => existing.SearchTags, mergedTags)
-                .Set(existing => existing.Stats, mergedStats)
                 .Set(existing => existing.UpdatedAtUtc, now);
 
             writes.Add(new UpdateOneModel<UserCard>(Builders<UserCard>.Filter.Eq(existing => existing.Id, card.Id), update));
@@ -482,8 +460,7 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
             || string.IsNullOrWhiteSpace(card.Rarity)
             || string.IsNullOrWhiteSpace(card.TypeLine)
             || string.IsNullOrWhiteSpace(card.MainText)
-            || card.SearchTags.Count == 0
-            || IsStatsEmpty(card.Stats);
+            || card.SearchTags.Count == 0;
     }
 
     private async Task<ProviderCardEnrichment?> TryGetProviderEnrichmentAsync(string gameType, string externalCardId, CancellationToken cancellationToken)
@@ -515,7 +492,6 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         }
 
         var root = payload.RootElement;
-        var hp = GetInt(root, "hp");
         var categories = GetStringArray(root, "types");
 
         return new ProviderCardEnrichment
@@ -524,13 +500,7 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
             Rarity = GetString(root, "rarity"),
             TypeLine = PickFirstNonEmpty(GetString(root, "category"), string.Join('/', categories)),
             MainText = PickFirstNonEmpty(GetString(root, "effect"), GetString(root, "description")),
-            SearchTags = categories,
-            Stats = new UserCardStats
-            {
-                Hp = hp,
-                Colors = categories,
-                Attribute = string.Empty,
-            }
+            SearchTags = categories
         };
     }
 
@@ -558,12 +528,7 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
             Rarity = GetString(root, "rarity"),
             TypeLine = GetString(root, "type_line"),
             MainText = PickFirstNonEmpty(GetString(root, "oracle_text"), GetString(root, "flavor_text")),
-            SearchTags = colors,
-            Stats = new UserCardStats
-            {
-                Colors = colors,
-                Attribute = string.Empty,
-            }
+            SearchTags = colors
         };
     }
 
@@ -597,35 +562,8 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
             Rarity = GetNestedString(root, "card_sets", 0, "set_rarity"),
             TypeLine = PickFirstNonEmpty(type, race),
             MainText = GetString(root, "desc"),
-            SearchTags = NormalizeTags([type, race, GetString(root, "archetype")]),
-            Stats = new UserCardStats
-            {
-                Attribute = GetString(root, "attribute") ?? string.Empty,
-                Colors = [],
-            }
+            SearchTags = NormalizeTags([type, race, GetString(root, "archetype")])
         };
-    }
-
-    private static UserCardStats MergeStats(UserCardStats requestStats, UserCardStats? enrichedStats)
-    {
-        if (enrichedStats is null)
-        {
-            return requestStats;
-        }
-
-        return new UserCardStats
-        {
-            Hp = requestStats.Hp ?? enrichedStats.Hp,
-            Colors = requestStats.Colors.Count > 0 ? requestStats.Colors : enrichedStats.Colors,
-            Attribute = PickFirstNonEmpty(requestStats.Attribute, enrichedStats.Attribute) ?? string.Empty,
-        };
-    }
-
-    private static bool IsStatsEmpty(UserCardStats stats)
-    {
-        return stats.Hp is null
-            && stats.Colors.Count == 0
-            && string.IsNullOrWhiteSpace(stats.Attribute);
     }
 
     private static List<string> MergeTags(List<string> requestTags, List<string>? enrichedTags)
@@ -673,12 +611,6 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
             JsonValueKind.Number => property.ToString(),
             _ => null,
         };
-    }
-
-    private static int? GetInt(JsonElement element, string propertyName)
-    {
-        var value = GetString(element, propertyName);
-        return int.TryParse(value, out var result) ? result : null;
     }
 
     private static List<string> GetStringArray(JsonElement element, string propertyName)
@@ -736,7 +668,5 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         public string? MainText { get; set; }
 
         public List<string> SearchTags { get; set; } = [];
-
-        public UserCardStats Stats { get; set; } = new();
     }
 }
