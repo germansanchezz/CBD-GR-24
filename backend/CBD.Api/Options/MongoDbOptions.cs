@@ -11,4 +11,6 @@ public sealed class MongoDbOptions
     public string UsersCollectionName { get; set; } = "users";
 
     public string DecksCollectionName { get; set; } = "decks";
+
+    public string UserCardsCollectionName { get; set; } = "user_cards";
 }
