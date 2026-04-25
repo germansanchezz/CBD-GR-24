@@ -1,3 +1,4 @@
+using CBD.Api.Data;
 using CBD.Api.Options;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -34,6 +35,10 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+await MongoIndexInitializer.EnsureIndexesAsync(
+    app.Services.GetRequiredService<IMongoClient>(),
+    app.Services.GetRequiredService<IOptions<MongoDbOptions>>());
 
 app.UseCors("frontend");
 
