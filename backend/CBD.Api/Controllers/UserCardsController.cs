@@ -14,6 +14,81 @@ namespace CBD.Api.Controllers;
 [Route("api/user-cards")]
 public sealed class UserCardsController(IMongoClient mongoClient, IOptions<MongoDbOptions> options) : ControllerBase
 {
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetUserCardsStats([FromQuery] string? gameType)
+    {
+        if (!UserHeaderHelper.TryGetUserId(Request.Headers, out var userId, out var authError))
+        {
+            return authError!;
+        }
+
+        var filter = Builders<UserCard>.Filter.Eq(card => card.UserId, userId);
+
+        if (!string.IsNullOrWhiteSpace(gameType))
+        {
+            if (!DeckGameTypes.TryNormalize(gameType, out var normalizedGameType))
+            {
+                return BadRequest(new { message = "gameType debe ser pokemon, magic o yugioh." });
+            }
+
+            filter &= Builders<UserCard>.Filter.Eq(card => card.GameType, normalizedGameType);
+        }
+
+        var cards = await GetCollection().Find(filter).ToListAsync();
+
+        var totalUniqueCards = cards.Count;
+        var totalOwnedCopies = cards.Sum(card => card.QuantityOwned);
+        var distinctSets = cards
+            .Select(card => card.SetName.Trim())
+            .Where(setName => !string.IsNullOrWhiteSpace(setName))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        var averageCopiesPerCard = totalUniqueCards == 0
+            ? 0m
+            : decimal.Round((decimal)totalOwnedCopies / totalUniqueCards, 2);
+
+        var gameTypeDistribution = cards
+            .GroupBy(card => string.IsNullOrWhiteSpace(card.GameType) ? "unknown" : card.GameType.Trim().ToLowerInvariant())
+            .Select(group => new UserCardsByFieldStat(group.Key, group.Sum(card => card.QuantityOwned)))
+            .OrderByDescending(stat => stat.TotalOwnedCopies)
+            .ThenBy(stat => stat.Label)
+            .ToList();
+
+        var rarityDistribution = cards
+            .GroupBy(card => string.IsNullOrWhiteSpace(card.Rarity) ? "unknown" : card.Rarity.Trim())
+            .Select(group => new UserCardsByFieldStat(group.Key, group.Sum(card => card.QuantityOwned)))
+            .OrderByDescending(stat => stat.TotalOwnedCopies)
+            .ThenBy(stat => stat.Label)
+            .ToList();
+
+        var setDistribution = cards
+            .GroupBy(card => string.IsNullOrWhiteSpace(card.SetName) ? "unknown" : card.SetName.Trim())
+            .Select(group => new UserCardsByFieldStat(group.Key, group.Sum(card => card.QuantityOwned)))
+            .OrderByDescending(stat => stat.TotalOwnedCopies)
+            .ThenBy(stat => stat.Label)
+            .ToList();
+
+        var topCards = cards
+            .OrderByDescending(card => card.QuantityOwned)
+            .ThenBy(card => card.Name)
+            .Take(10)
+            .Select(card => new UserCardsTopCardStat(card.ExternalCardId, card.Name, card.GameType, card.QuantityOwned))
+            .ToList();
+
+        var response = new UserCardsStatsResponse(
+            totalUniqueCards,
+            totalOwnedCopies,
+            distinctSets,
+            averageCopiesPerCard,
+            gameTypeDistribution,
+            rarityDistribution,
+            setDistribution,
+            topCards);
+
+        return Ok(response);
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetUserCards(
         [FromQuery] string? gameType,
