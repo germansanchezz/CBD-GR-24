@@ -19,6 +19,7 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
     private const int MaxSearchTagsCount = 25;
     private const int MaxTagLength = 40;
     private const int MaxQuantityOwned = 999;
+    private const int MaxQuantityDelta = 100;
 
     [HttpGet("stats")]
     public async Task<IActionResult> GetUserCardsStats([FromQuery] string? gameType)
@@ -271,6 +272,58 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         return result.DeletedCount == 0
             ? NotFound(new { message = "Carta no encontrada en la coleccion." })
             : NoContent();
+    }
+
+    [HttpPost("{userCardId}/quantity")]
+    public async Task<IActionResult> AdjustUserCardQuantity(string userCardId, [FromBody] AdjustUserCardQuantityRequest request)
+    {
+        if (!ObjectId.TryParse(userCardId, out _))
+        {
+            return BadRequest(new { message = "userCardId no es valido." });
+        }
+
+        if (!UserHeaderHelper.TryGetUserId(Request.Headers, out var userId, out var authError))
+        {
+            return authError!;
+        }
+
+        if (request.Delta == 0)
+        {
+            return BadRequest(new { message = "delta debe ser distinto de 0." });
+        }
+
+        if (Math.Abs(request.Delta) > MaxQuantityDelta)
+        {
+            return BadRequest(new { message = $"delta no puede superar {MaxQuantityDelta} en valor absoluto." });
+        }
+
+        var collection = GetCollection();
+        var card = await collection
+            .Find(existingCard => existingCard.Id == userCardId && existingCard.UserId == userId)
+            .FirstOrDefaultAsync();
+
+        if (card is null)
+        {
+            return NotFound(new { message = "Carta no encontrada en la coleccion." });
+        }
+
+        var nextQuantityOwned = card.QuantityOwned + request.Delta;
+        if (nextQuantityOwned < 0)
+        {
+            return BadRequest(new { message = "No puedes dejar quantityOwned en negativo." });
+        }
+
+        if (nextQuantityOwned > MaxQuantityOwned)
+        {
+            return BadRequest(new { message = $"quantityOwned no puede superar {MaxQuantityOwned}." });
+        }
+
+        card.QuantityOwned = nextQuantityOwned;
+        card.UpdatedAtUtc = DateTime.UtcNow;
+
+        await collection.ReplaceOneAsync(existingCard => existingCard.Id == card.Id, card);
+
+        return Ok(card);
     }
 
     private IMongoCollection<UserCard> GetCollection()
