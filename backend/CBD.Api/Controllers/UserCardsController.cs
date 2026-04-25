@@ -101,11 +101,24 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         [FromQuery] string? gameType,
         [FromQuery] string? name,
         [FromQuery] string? rarity,
-        [FromQuery] string? setName)
+        [FromQuery] string? setName,
+        [FromQuery] bool inUseOnly = false,
+        [FromQuery] int? minQuantityOwned = null,
+        [FromQuery] int? maxQuantityOwned = null)
     {
         if (!UserHeaderHelper.TryGetUserId(Request.Headers, out var userId, out var authError))
         {
             return authError!;
+        }
+
+        if (minQuantityOwned is < 0 || maxQuantityOwned is < 0)
+        {
+            return BadRequest(new { message = "minQuantityOwned y maxQuantityOwned no pueden ser negativos." });
+        }
+
+        if (minQuantityOwned.HasValue && maxQuantityOwned.HasValue && minQuantityOwned > maxQuantityOwned)
+        {
+            return BadRequest(new { message = "minQuantityOwned no puede ser mayor que maxQuantityOwned." });
         }
 
         var filter = Builders<UserCard>.Filter.Eq(card => card.UserId, userId);
@@ -136,6 +149,21 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         {
             var safeSetName = Regex.Escape(setName.Trim());
             filter &= Builders<UserCard>.Filter.Regex(card => card.SetName, new BsonRegularExpression(safeSetName, "i"));
+        }
+
+        if (inUseOnly)
+        {
+            filter &= Builders<UserCard>.Filter.Gt(card => card.QuantityInDecks, 0);
+        }
+
+        if (minQuantityOwned.HasValue)
+        {
+            filter &= Builders<UserCard>.Filter.Gte(card => card.QuantityOwned, minQuantityOwned.Value);
+        }
+
+        if (maxQuantityOwned.HasValue)
+        {
+            filter &= Builders<UserCard>.Filter.Lte(card => card.QuantityOwned, maxQuantityOwned.Value);
         }
 
         var cards = await GetCollection()

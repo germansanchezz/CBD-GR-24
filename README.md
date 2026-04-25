@@ -160,9 +160,10 @@ Reglas aplicadas en la UI/API:
 - `POST /api/decks` crear baraja.
 - `PUT /api/decks/{deckId}` actualizar baraja.
 - `DELETE /api/decks/{deckId}` eliminar baraja.
-- `GET /api/user-cards` listar colección del usuario (filtros: `gameType`, `name`, `rarity`, `setName`).
+- `GET /api/user-cards` listar colección del usuario (filtros: `gameType`, `name`, `rarity`, `setName`, `inUseOnly`, `minQuantityOwned`, `maxQuantityOwned`).
 - `POST /api/user-cards` guardar o acumular carta en colección del usuario.
 - `DELETE /api/user-cards/{userCardId}` eliminar carta de colección del usuario.
+- `POST /api/user-cards/{userCardId}/quantity` ajustar cantidad (`delta` positivo o negativo).
 - `GET /api/user-cards/stats` estadísticas de colección del usuario (opcional filtro `gameType`).
 
 Para `/api/decks`, envía la cabecera `X-User-Id` con el `id` devuelto por login/registro.
@@ -185,6 +186,7 @@ Variables de entorno mínimas:
 - `MongoDb__DatabaseName` = `deckbuilder_db` (o el nombre que quieras).
 - `MongoDb__UsersCollectionName` = `users` (opcional).
 - `MongoDb__DecksCollectionName` = `decks` (opcional).
+- `MongoDb__UserCardsCollectionName` = `user_cards` (opcional).
 
 ## 2) Frontend (Static Site o Web Service)
 
