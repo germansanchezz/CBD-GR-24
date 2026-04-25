@@ -192,7 +192,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
       <header className="deck-header">
         <div>
           <p className="eyebrow">DeckBuilder</p>
-          <h1 className="deck-title">{activeTab === 'decks' ? 'Coleccion de barajas' : 'Mi coleccion'}</h1>
+          <h1 className="deck-title">{activeTab === 'decks' ? 'Colección de barajas' : 'Mi colección'}</h1>
           <p className="hero-copy">Bienvenido, {userName}.</p>
         </div>
 
@@ -279,7 +279,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
       ) : (
         <section className="collection-stats-panel">
           <header className="collection-stats-header">
-            <h2>Mi coleccion</h2>
+            <h2>Mi colección</h2>
             <div className="collection-game-filter" role="group" aria-label="Filtrar por juego">
               {collectionFilterOptions.map((option) => {
                 const isActive = option.value === collectionGameTypeFilter;

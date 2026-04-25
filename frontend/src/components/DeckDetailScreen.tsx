@@ -247,7 +247,7 @@ export function DeckDetailScreen({
       <section className="deck-page-card">
         <header className="deck-editor-header">
         <button type="button" className="secondary-button" onClick={onBackToCollection}>
-          Volver a coleccion
+          Volver a colección
         </button>
 
         <button type="button" className="secondary-button danger-button" onClick={() => { void handleDeleteDeck(); }}>
