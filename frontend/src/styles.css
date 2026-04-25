@@ -159,16 +159,14 @@ select {
 
 .create-deck-modal-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
   background: rgba(15, 23, 42, 0.42);
   backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
+  overflow-y: auto;
   z-index: 999;
 }
 
@@ -180,6 +178,10 @@ select {
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(31, 41, 55, 0.1);
   box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22);
+}
+
+.edit-deck-modal {
+  width: min(100%, 560px);
 }
 
 .create-deck-modal-header {
@@ -231,6 +233,14 @@ select {
   border-top: 1px solid rgba(31, 41, 55, 0.1);
 }
 
+.collection-stats-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .collection-stats-header h2 {
   margin: 0;
   font-size: 1.25rem;
@@ -238,6 +248,39 @@ select {
 
 .collection-stats-header p {
   margin-top: 8px;
+}
+
+.collection-game-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.collection-game-filter-button {
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+  color: #1f2937;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.collection-game-filter-button:hover {
+  transform: translateY(-1px);
+}
+
+.collection-game-filter-button.is-active {
+  background: #1f2937;
+  color: #f8fafc;
+  box-shadow: 0 8px 18px rgba(31, 41, 55, 0.2);
+}
+
+.collection-game-filter-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
 }
 
 .collection-stats-grid {
@@ -720,6 +763,10 @@ h1 {
 
   .deck-search-actions {
     grid-template-columns: 1fr;
+  }
+
+  .collection-game-filter {
+    width: 100%;
   }
 
   .create-deck-modal-backdrop {

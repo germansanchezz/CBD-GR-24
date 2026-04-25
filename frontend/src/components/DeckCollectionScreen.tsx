@@ -15,6 +15,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
   const [isDecksLoading, setIsDecksLoading] = useState(false);
   const [deckErrorMessage, setDeckErrorMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'decks' | 'collection'>('decks');
+  const [collectionGameTypeFilter, setCollectionGameTypeFilter] = useState<'all' | DeckGameType>('all');
   const [showCreateDeckForm, setShowCreateDeckForm] = useState(false);
   const [newDeckName, setNewDeckName] = useState('');
   const [newDeckDescription, setNewDeckDescription] = useState('');
@@ -28,6 +29,11 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
 
   const userId = currentUser.id;
   const userName = currentUser.displayName || currentUser.email;
+  const selectedCollectionGameType = collectionGameTypeFilter === 'all' ? undefined : collectionGameTypeFilter;
+  const collectionFilterOptions: Array<{ value: 'all' | DeckGameType; label: string }> = [
+    { value: 'all', label: 'Todos los juegos' },
+    ...DECK_GAME_TYPE_OPTIONS,
+  ];
   const selectedDeck = openedDeckId
     ? decks.find((deck) => deck.id === openedDeckId) ?? null
     : null;
@@ -35,24 +41,18 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
   useEffect(() => {
     if (!userId) {
       setDecks([]);
-      setCollectionStats(null);
+      setOpenedDeckId(null);
       setDeckErrorMessage('El usuario actual no tiene id para cargar barajas.');
       return;
     }
 
-    const loadDecksAndCollectionStats = async () => {
+    const loadDecks = async () => {
       setIsDecksLoading(true);
-      setIsCollectionStatsLoading(true);
       setDeckErrorMessage('');
 
       try {
-        const [loadedDecks, loadedCollectionStats] = await Promise.all([
-          getDecks(userId),
-          getUserCardsStats({ userId }),
-        ]);
-
+        const loadedDecks = await getDecks(userId);
         setDecks(loadedDecks);
-        setCollectionStats(loadedCollectionStats);
         setOpenedDeckId((currentId) => {
           if (currentId && loadedDecks.some((deck) => deck.id === currentId)) {
             return currentId;
@@ -68,12 +68,37 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
         }
       } finally {
         setIsDecksLoading(false);
+      }
+    };
+
+    void loadDecks();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) {
+      setCollectionStats(null);
+      setIsCollectionStatsLoading(false);
+      return;
+    }
+
+    const loadCollectionStats = async () => {
+      setIsCollectionStatsLoading(true);
+
+      try {
+        const loadedCollectionStats = await getUserCardsStats({
+          userId,
+          gameType: selectedCollectionGameType,
+        });
+        setCollectionStats(loadedCollectionStats);
+      } catch {
+        setCollectionStats(null);
+      } finally {
         setIsCollectionStatsLoading(false);
       }
     };
 
-    void loadDecksAndCollectionStats();
-  }, [userId]);
+    void loadCollectionStats();
+  }, [selectedCollectionGameType, userId]);
 
   const reloadCollectionStats = async () => {
     if (!userId) {
@@ -81,7 +106,10 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
     }
 
     try {
-      const loadedCollectionStats = await getUserCardsStats({ userId });
+      const loadedCollectionStats = await getUserCardsStats({
+        userId,
+        gameType: selectedCollectionGameType,
+      });
       setCollectionStats(loadedCollectionStats);
     } catch {
       // Keep deck interactions responsive even if stats refresh fails.
@@ -252,6 +280,25 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
         <section className="collection-stats-panel">
           <header className="collection-stats-header">
             <h2>Mi coleccion</h2>
+            <div className="collection-game-filter" role="group" aria-label="Filtrar por juego">
+              {collectionFilterOptions.map((option) => {
+                const isActive = option.value === collectionGameTypeFilter;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`collection-game-filter-button${isActive ? ' is-active' : ''}`}
+                    aria-pressed={isActive}
+                    onClick={() => {
+                      setCollectionGameTypeFilter(option.value);
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </header>
 
           {isCollectionStatsLoading ? (
@@ -285,7 +332,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
                   <p className="deck-state-text">Aun no hay cartas en tu coleccion.</p>
                 ) : (
                   <ul className="collection-top-list">
-                    {collectionStats.topCards.map((card) => (
+                    {collectionStats.topCards.slice(0, 3).map((card) => (
                       <li key={`${card.gameType}-${card.externalCardId}`}>
                         <span>{card.name}</span>
                         <span className="deck-meta">{card.totalOwnedCopies} copias</span>

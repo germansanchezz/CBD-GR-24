@@ -23,6 +23,7 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
     private const int MaxTagLength = 40;
     private const int MaxQuantityOwned = 999;
     private const int MaxQuantityDelta = 100;
+    private const int TopCardsLimit = 3;
 
     [HttpGet("stats")]
     public async Task<IActionResult> GetUserCardsStats([FromQuery] string? gameType)
@@ -85,7 +86,7 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         var topCards = cards
             .OrderByDescending(card => card.QuantityOwned)
             .ThenBy(card => card.Name)
-            .Take(10)
+            .Take(TopCardsLimit)
             .Select(card => new UserCardsTopCardStat(card.ExternalCardId, card.Name, card.GameType, card.QuantityOwned))
             .ToList();
 

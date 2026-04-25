@@ -1,8 +1,9 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { deleteDeck, searchCardsByGameType, updateDeck } from '../api/client';
 import { getDeckGameTypeLabel } from '../types';
 import type { Deck, DeckCard, TcgSearchCard } from '../types';
-import { FiPlus, FiMinus, FiSearch, FiX } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiMinus, FiSearch, FiX } from 'react-icons/fi';
 
 type DeckDetailScreenProps = {
   deck: Deck;
@@ -24,7 +25,17 @@ export function DeckDetailScreen({
   const [searchResults, setSearchResults] = useState<TcgSearchCard[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSavingCards, setIsSavingCards] = useState(false);
+  const [deckName, setDeckName] = useState(deck.name);
+  const [deckDescription, setDeckDescription] = useState(deck.description);
+  const [showEditDeckModal, setShowEditDeckModal] = useState(false);
+  const [isSavingDeckMetadata, setIsSavingDeckMetadata] = useState(false);
+  const [editDeckErrorMessage, setEditDeckErrorMessage] = useState('');
   const [editorMessage, setEditorMessage] = useState('');
+
+  useEffect(() => {
+    setDeckName(deck.name);
+    setDeckDescription(deck.description);
+  }, [deck.description, deck.id, deck.name]);
 
   const getTotalCards = (cards: DeckCard[]) => cards.reduce((sum, card) => sum + card.quantity, 0);
 
@@ -91,6 +102,64 @@ export function DeckDetailScreen({
         setEditorMessage('No se pudo eliminar la baraja.');
       }
     }
+  };
+
+  const handleSaveDeckMetadata = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedName = deckName.trim();
+    const trimmedDescription = deckDescription.trim();
+    const hasMetadataChanges = trimmedName !== deck.name || trimmedDescription !== deck.description;
+
+    if (!hasMetadataChanges) {
+      setShowEditDeckModal(false);
+      return;
+    }
+
+    if (!trimmedName) {
+      setEditDeckErrorMessage('El nombre de la baraja es obligatorio.');
+      return;
+    }
+
+    if (!deck.id) {
+      setEditDeckErrorMessage('No se pudo guardar: baraja sin id.');
+      return;
+    }
+
+    setIsSavingDeckMetadata(true);
+    setEditDeckErrorMessage('');
+
+    try {
+      const updatedDeck = await updateDeck({
+        userId,
+        deckId: deck.id,
+        name: trimmedName,
+        description: trimmedDescription,
+        cards: deck.cards,
+      });
+
+      onDeckUpdated(updatedDeck);
+      setDeckName(updatedDeck.name);
+      setDeckDescription(updatedDeck.description);
+      setShowEditDeckModal(false);
+    } catch (error) {
+      if (error instanceof Error) {
+        setEditDeckErrorMessage(error.message);
+      } else {
+        setEditDeckErrorMessage('No se pudo guardar la baraja.');
+      }
+    } finally {
+      setIsSavingDeckMetadata(false);
+    }
+  };
+
+  const closeEditDeckModal = () => {
+    if (isSavingDeckMetadata) {
+      return;
+    }
+
+    setShowEditDeckModal(false);
+    setEditDeckErrorMessage('');
   };
 
   const updateCardQuantity = async (card: TcgSearchCard | DeckCard, delta: 1 | -1) => {
@@ -174,8 +243,9 @@ export function DeckDetailScreen({
   };
 
   return (
-    <section className="deck-page-card">
-      <header className="deck-editor-header">
+    <>
+      <section className="deck-page-card">
+        <header className="deck-editor-header">
         <button type="button" className="secondary-button" onClick={onBackToCollection}>
           Volver a coleccion
         </button>
@@ -186,12 +256,27 @@ export function DeckDetailScreen({
 
         <button
           type="button"
-          className="primary-button"
+          className="secondary-button icon-label-button"
+          onClick={() => {
+            setDeckName(deck.name);
+            setDeckDescription(deck.description);
+            setEditDeckErrorMessage('');
+            setShowEditDeckModal(true);
+          }}
+        >
+          <FiEdit2 aria-hidden="true" />
+          Editar baraja
+        </button>
+
+        <button
+          type="button"
+          className="primary-button icon-label-button"
           onClick={() => {
             setIsSearchOpen((value) => !value);
             setEditorMessage('');
           }}
         >
+          {isSearchOpen ? <FiX aria-hidden="true" /> : <FiSearch aria-hidden="true" />}
           {isSearchOpen ? 'Cerrar buscador' : 'Abrir buscador'}
         </button>
       </header>
@@ -318,7 +403,69 @@ export function DeckDetailScreen({
         </div>
 
         {editorMessage && <p className="error-message">{editorMessage}</p>}
+        </section>
       </section>
-    </section>
+      {showEditDeckModal ? createPortal(
+        <div className="create-deck-modal-backdrop" onClick={closeEditDeckModal}>
+          <section
+            className="create-deck-modal edit-deck-modal"
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            aria-modal="true"
+            role="dialog"
+            aria-labelledby="edit-deck-title"
+          >
+            <header className="create-deck-modal-header">
+              <h2 id="edit-deck-title">Editar baraja</h2>
+              <button
+                type="button"
+                className="secondary-button icon-label-button create-deck-modal-close-button"
+                onClick={closeEditDeckModal}
+                aria-label="Cerrar modal"
+                disabled={isSavingDeckMetadata}
+              >
+                <FiX aria-hidden="true" />
+                Cerrar
+              </button>
+            </header>
+
+            <form className="create-deck-form" onSubmit={handleSaveDeckMetadata}>
+              <label className="field">
+                <span>Nombre de la baraja</span>
+                <input
+                  type="text"
+                  value={deckName}
+                  onChange={(event) => setDeckName(event.target.value)}
+                  placeholder="Ej: Mazo control"
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span>Descripcion (opcional)</span>
+                <input
+                  type="text"
+                  value={deckDescription}
+                  onChange={(event) => setDeckDescription(event.target.value)}
+                  placeholder="Plan de juego o notas"
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={isSavingDeckMetadata}
+              >
+                {isSavingDeckMetadata ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+
+              {editDeckErrorMessage && <p className="error-message">{editDeckErrorMessage}</p>}
+            </form>
+          </section>
+        </div>,
+        document.body,
+      ) : null}
+    </>
   );
 }
