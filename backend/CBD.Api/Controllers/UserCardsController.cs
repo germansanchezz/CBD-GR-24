@@ -213,6 +213,27 @@ public sealed class UserCardsController(IMongoClient mongoClient, IOptions<Mongo
         return Ok(existingCard);
     }
 
+    [HttpDelete("{userCardId}")]
+    public async Task<IActionResult> DeleteUserCard(string userCardId)
+    {
+        if (!ObjectId.TryParse(userCardId, out _))
+        {
+            return BadRequest(new { message = "userCardId no es valido." });
+        }
+
+        if (!UserHeaderHelper.TryGetUserId(Request.Headers, out var userId, out var authError))
+        {
+            return authError!;
+        }
+
+        var result = await GetCollection()
+            .DeleteOneAsync(card => card.Id == userCardId && card.UserId == userId);
+
+        return result.DeletedCount == 0
+            ? NotFound(new { message = "Carta no encontrada en la coleccion." })
+            : NoContent();
+    }
+
     private IMongoCollection<UserCard> GetCollection()
     {
         var database = mongoClient.GetDatabase(options.Value.DatabaseName);
