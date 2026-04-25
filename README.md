@@ -51,6 +51,7 @@ Variables soportadas:
 - `MongoDb__DatabaseName`
 - `MongoDb__UsersCollectionName` (opcional, por defecto `users`)
 - `MongoDb__DecksCollectionName` (opcional, por defecto `decks`)
+- `MongoDb__UserCardsCollectionName` (opcional, por defecto `user_cards`)
 
 Valores típicos:
 
@@ -159,8 +160,44 @@ Reglas aplicadas en la UI/API:
 - `POST /api/decks` crear baraja.
 - `PUT /api/decks/{deckId}` actualizar baraja.
 - `DELETE /api/decks/{deckId}` eliminar baraja.
+- `GET /api/user-cards` listar colección del usuario (filtros: `gameType`, `name`, `rarity`, `setName`).
+- `POST /api/user-cards` guardar o acumular carta en colección del usuario.
+- `DELETE /api/user-cards/{userCardId}` eliminar carta de colección del usuario.
+- `GET /api/user-cards/stats` estadísticas de colección del usuario (opcional filtro `gameType`).
 
 Para `/api/decks`, envía la cabecera `X-User-Id` con el `id` devuelto por login/registro.
+
+Para `/api/user-cards` y `/api/user-cards/stats`, también debes enviar `X-User-Id`.
+
+### Ejemplo rápido: guardar carta en colección
+
+```powershell
+$headers = @{ "X-User-Id" = "<USER_ID>"; "Content-Type" = "application/json" }
+$body = @"
+{
+    "gameType": "pokemon",
+    "externalCardId": "xy7-54",
+    "name": "Gardevoir",
+    "imageUrl": "https://.../high.webp",
+    "setName": "Ancient Origins",
+    "rarity": "Rare Holo",
+    "typeLine": "Pokemon",
+    "searchTags": ["psychic", "stage2"],
+    "mainText": "Brilliant Arrow",
+    "stats": { "hp": 130, "attack": 0, "defense": 0, "cost": 0, "level": null, "colors": ["psychic"], "attribute": "" },
+    "quantityOwned": 1
+}
+"@
+
+Invoke-RestMethod -Method Post -Uri http://localhost:5000/api/user-cards -Headers $headers -Body $body
+```
+
+### Ejemplo rápido: estadísticas de colección
+
+```powershell
+$headers = @{ "X-User-Id" = "<USER_ID>" }
+Invoke-RestMethod -Method Get -Uri "http://localhost:5000/api/user-cards/stats?gameType=pokemon" -Headers $headers
+```
 
 ## Despliegue en Render (paso a paso)
 
