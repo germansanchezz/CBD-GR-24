@@ -1,0 +1,158 @@
+\chapter{Desarrollo CORE}\label{cap:desarrollo}
+
+\section{Implementación del núcleo funcional}
+
+Esta segunda etapa del proyecto se centró en la transformación de los diseños y
+esquemas previos en un producto de software funcional. El objetivo primordial
+consistió en construir una base tecnológica sólida que cubriera el ciclo de vida
+completo del usuario dentro de la aplicación: desde el proceso de autenticación
+inicial hasta la gestión avanzada de sus barajas.
+
+Para asegurar la calidad del software, la implementación se llevó a cabo de forma
+incremental y modular. Este enfoque, basado en el cumplimiento de hitos concretos y el
+uso de commits atómicos, permitió validar de manera constante cada funcionalidad antes
+de proceder a la siguiente, minimizando el riesgo de errores estructurales.
+
+\section{Desarrollo del backend y consolidación del CRUD}
+
+En el entorno de backend, se estructuró una API bajo el entorno de .NET 8 diseñada
+para soportar operaciones transaccionales sobre las barajas de usuarios autenticados.
+Durante este proceso, se priorizó la separación de responsabilidades mediante el uso
+de DTOs y validaciones independientes, lo que mejora la mantenibilidad del código y
+evita el acoplamiento entre la lógica de negocio y la capa de transporte de datos.
+
+Sobre esta arquitectura se consolidó el sistema CRUD completo para la entidad de
+barajas: creación (CREATE), lectura (READ), actualización (UPDATE) y borrado (DELETE).
+La lógica de actualización fue algo más compleja, ya que incluye la persistencia
+dinámica de cartas dentro de cada mazo y la implementación de reglas de dominio
+específicas, como el control de copias máximas permitidas y el tamaño total de la
+baraja.
+
+Para garantizar la estabilidad de los datos externos se optimizó la comunicación con
+los proveedores de cartas mediante el desarrollo de un mejor cliente HTTP. Se
+realizaron ajustes pequeños en los algoritmos de búsqueda para asegurar que las
+respuestas obtenidas desde fuentes como Pokémon o Magic fueran consistentes y
+estuvieran listas para su procesamiento en el servidor.
+
+\textbf{Figura 4.} Modelos de Deck y de User (C\#)
+
+\textbf{Figura 5.} Ejemplo controlador (C\#)
+
+\textbf{Figura 6.} Ejemplo validaciones (C\#)
+
+La API desarrollada sigue un diseño REST, estructurado en torno a recursos como
+usuarios, barajas y cartas. Esta organización permite una separación clara de
+responsabilidades y facilita la escalabilidad del sistema.
+
+Los endpoints implementados cubren tanto la autenticación como la gestión completa de
+barajas y la colección de cartas del usuario.
+
+\subsection*{Autenticación}
+
+\begin{itemize}
+	\item POST /api/auth/register: registro nuevos usuarios.
+	\item POST /api/auth/login: autenticación de usuarios existentes.
+\end{itemize}
+
+\subsection*{Gestión de barajas (Decks)}
+
+\begin{itemize}
+	\item GET /api/decks: obtención de todas las barajas del usuario autenticado.
+	\item GET /api/decks/\{deckId\}: consulta detallada de baraja específica.
+	\item POST /api/decks: creación de nueva baraja.
+	\item PUT /api/decks/\{deckId\}: actualización de una baraja, incluyendo
+	modificar cartas.
+	\item DELETE /api/decks/\{deckId\}: eliminación de una baraja.
+\end{itemize}
+
+\subsection*{Gestión de colección de cartas (User Cards)}
+
+\begin{itemize}
+	\item GET /api/user-cards: obtención de colección de cartas del usuario
+	(README, detalles).
+	\item GET /api/user-cards/stats: obtención de estadísticas de colección
+	(README, detalles).
+	\item POST /api/user-cards: inserción de nuevas cartas en colección.
+	\item POST /api/user-cards/\{userCardId\}/quantity: ajuste incremental de copias
+	carta.
+	\item DELETE /api/user-cards/\{userCardId\}: eliminación carta de colección.
+\end{itemize}
+
+\subsection*{Búsqueda de cartas}
+
+\begin{itemize}
+	\item GET /api/cards/search: búsqueda de cartas fuentes externas.
+\end{itemize}
+
+Este conjunto de endpoints constituye la base del sistema CRUD ampliado, no solo
+sobre barajas sino también sobre la colección personal del usuario. La inclusión de
+endpoints de estadística y búsqueda externa aporta un valor añadido al sistema.
+
+Su funcionamiento detallado y configuración se encuentran descritos en el archivo
+README del repositorio, donde se abordan aspectos como la lógica de interacción,
+validaciones y comunicación con la base de datos.
+
+\section{Desarrollo del frontend y flujo operativo real}
+
+Paralelamente, el desarrollo de la interfaz de usuario evolucionó desde prototipos
+estáticos hacia un flujo operativo completo y dinámico. Se implementó un sistema de
+gestión de sesiones que permite el cambio fluido entre las vistas de registro e inicio
+de sesión, garantizando que el usuario acceda únicamente a su colección privada
+almacenada en MongoDB una vez identificado.
+
+Tras la validación del acceso, se desarrollaron las vistas de colección y el detalle
+de cada baraja. Estas interfaces permiten al usuario interactuar en tiempo real con su
+contenido, editando la composición del mazo y persistiendo los cambios de forma
+inmediata con la API. Esta evolución incluye una refactorización integral del cliente
+por áreas de responsabilidad (autenticación, colección y comunicación con la API) para
+facilitar la escalabilidad futura.
+
+Como fase de cierre de la interfaz, se incorporó la funcionalidad de borrado
+definitivo de barajas y se aplicaron técnicas de diseño responsive. Estas mejoras
+aseguran que la experiencia de usuario sea óptima y visualmente coherente en una
+amplia variedad de dispositivos.
+
+\textbf{Figura 7.} Pantalla de Login/Registro
+
+\textbf{Figura 8.} Pantalla de Colección de barajas
+
+\textbf{Figura 9.} Pantalla de Mi colección
+
+\textbf{Figura 10.} Pantalla de Crear nueva baraja
+
+\textbf{Figura 11.} Pantalla de Mi baraja
+
+\textbf{Figura 12.} Pantalla de Buscador de cartas
+
+\section{Capacidades multijuego y editor visual de baraja}
+
+Una de las partes más relevantes de esta fase fue la transformación de la plataforma
+en una solución multijuego auténtica. Se integra el tipo de juego (Pokémon, Magic o
+Yu-GI-Oh!) como un atributo estructural dentro de la base de datos de MongoDB,
+permitiendo que el sistema se adapte dinámicamente según la elección del usuario al
+crear una nueva baraja.
+
+Gracias a esta base polimórfica, se desarrolló un endpoint de búsqueda unificado capaz
+de consultar múltiples fuentes externas de manera homogénea. Esta integración permite
+al usuario buscar cartas de diferentes franquicias bajo un mismo estándar visual,
+simplificando la complejidad técnica de las diferentes estructuras de datos de origen.
+
+Finalmente, se construyó el editor visual de barajas, la herramienta central de la
+aplicación. En este componente, los usuarios pueden añadir o retirar cartas mediante
+controles directos, mientras el sistema aplica automáticamente las reglas de validación
+específicas de cada juego dentro de la lógica de actualización, garantizando que el
+mazo resultante sea legal dentro de cada uno de los juegos.
+
+\textbf{Figura 13.} Atributo GameType (MongoDB)
+
+\section{Resultados de la fase}
+
+La Fase 2 concluyó exitosamente con un núcleo funcional operativo que integra
+autenticación, vinculación de datos por usuario, un CRUD completo y un motor
+multijuego. El sistema ha demostrado su funcionamiento al permitir la construcción de
+mazos completos de forma muy clara e interactiva.
+
+Desde el punto de vista arquitectónico, la solución queda preparada para crecer sin
+necesidad de reestructurar la base de datos para cada nueva franquicia. Se ha logrado
+una separación clara entre la interfaz, la lógica de negocio y la capa de persistencia,
+dejando una base sólida para las próximas etapas.

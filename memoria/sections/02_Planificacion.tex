@@ -1,0 +1,86 @@
+\chapter{Planificación y Diseño}\label{cap:planificacion}
+
+\section{Ideas y Alcance}
+
+Esta fase inicial fue determinante para establecer los cimientos de este proyecto. El
+primer hito fue una reunión inicial de definición de alcance donde se determinó que,
+para que el sistema fuera útil, debía ser capaz de manejar distintos juegos de cartas
+sin reestructurar la base de datos para cada franquicia.
+
+Durante la reunión, contemplamos diversas formas de orientar el proyecto sobre la
+base de las tecnologías escogidas. Tras analizar cómo usar APIs externas para la
+extracción de cartas, llegamos a la conclusión de que la creación de barajas
+personalizadas era la idea con más sentido para implementar el CRUD completo que se
+nos pedía. La visión era crear una base sólida que permitiera, en las siguientes
+fases, mejorar la lógica interna de validación de reglas.
+
+\section{Análisis del Flujo de Usuario y Casos de Uso}
+
+Para que la aplicación sea operativa, se definió un flujo de usuario lineal y lógico
+que maximiza la eficiencia en la gestión de colecciones. Este flujo se documentó bajo
+los siguientes pasos:
+
+\begin{itemize}
+	\item \textbf{Identificación y Autenticación:} El usuario accede al sistema, lo
+	que permite vincular sus barajas personalizadas a su perfil único almacenado en
+	MongoDB.
+	\item \textbf{Consulta y Descubrimiento:} El usuario utiliza el buscador. Este
+	componente realiza peticiones a la API externa de tcgdex.dev, devolviendo el
+	listado de cartas candidatas.
+	\item \textbf{Persistencia en Colección:} Una vez seleccionada una carta, el
+	sistema CRUD realiza una operación de creación (CREATE) para guardar la referencia
+	y los metadatos específicos.
+	\item \textbf{Construcción de Barajas:} El usuario crea un contenedor
+	``Baraja'' donde añade y retira cartas. Aquí se aplica la lógica de edición
+	(UPDATE) para modificar cantidades o estados.
+	\item \textbf{Ver y Eliminar:} El usuario puede ver sus barajas, lo que sería la
+	funcionalidad de (READ), y podría, si quisiera, eliminarlas con la operación de
+	(DELETE).
+\end{itemize}
+
+\section{Diseño de la Arquitectura de Datos en MongoDB}
+
+Al haber seleccionado MongoDB por el interés del equipo en las bases de datos no
+relacionales, el diseño de la arquitectura fue un punto clave. A diferencia de un
+modelo SQL rígido, optamos por un esquema basado en documentos BSON, lo que permite
+una flexibilidad total en los atributos.
+
+\textbf{Figura 1.} Modelo datos User (MongoDB)
+
+\textbf{Figura 2.} Modelo datos Deck (MongoDB)
+
+\textbf{Figura 3.} Modelo datos User\_Card (MongoDB)
+
+\section{Stack Tecnológico}
+
+El requisito principal del proyecto era construir una API REST que permitiese trabajar
+con una base de datos NoSQL en MongoDB. Para este proyecto en concreto, teníamos la
+restricción de que la tecnología a utilizar debía ser C\#, por lo que construimos el
+backend en .NET 8. Este se encarga de la lógica de negocio y exponer la API.
+
+Por otro lado, para ampliar el alcance inicial, se decidió incluir una capa frontend
+mediante React + Vite + TypeScript, con el objetivo de facilitar el uso de la API de
+cara a los usuarios.
+
+En cuanto a infraestructura, el proyecto se desplegó en servicios cloud:
+
+\begin{itemize}
+	\item Render para backend y frontend.
+	\item MongoDB Atlas para alojar la base de datos en entorno gestionado.
+\end{itemize}
+
+De esta forma, la solución mantiene el núcleo requerido (MongoDB + C\#) y añade una
+arquitectura web completa, preparada para uso real y validación en producción.
+
+\section{Resultado de la fase}
+
+La fase de planificación y diseño ha permitido establecer una base sólida para el
+desarrollo del proyecto. Durante esta etapa se han definido claramente los objetivos
+del sistema, el alcance funcional y el flujo de usuario, asegurando que la aplicación
+cubra las necesidades principales de gestión de barajas.
+
+Como resultado de esta fase, se ha obtenido una visión clara del funcionamiento global
+del sistema, incluyendo la interacción entre usuario, aplicación y fuentes externas de
+datos. Además, ha quedado definido el stack tecnológico. Esto ha facilitado la
+transición hacia la fase de desarrollo, donde se ha podido implementar el sistema de
+manera más eficiente y con menor riesgo de errores estructurales.
