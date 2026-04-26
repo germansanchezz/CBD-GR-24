@@ -343,7 +343,13 @@ export function DeckDetailScreen({
                   type="text"
                   value={searchText}
                   onChange={(event) => setSearchText(event.target.value)}
-                  placeholder="Ej: Carta por nombre"
+                  placeholder={
+                    deck.gameType === 'pokemon'
+                      ? 'Ej: Pikachu'
+                      : deck.gameType === 'magic'
+                        ? 'Ej: Trasgo'
+                        : 'Ej: Dragon'
+                  }
                 />
               </label>
 
