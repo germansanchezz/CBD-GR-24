@@ -10,6 +10,8 @@ Este README combina:
 
 ## URLs de producción (Render)
 
+Actualmente, el proyecto está desplegado en Render y conectado a una base de datos MongoDB alojada en Mongo Atlas. Para usar la aplicación sin necesidad de instalar ni descargar el código, se facilitan a continuación los enlaces de acceso. Ten en cuenta que el backend debe estar activo antes de poder interactuar con el frontend.
+
 - Backend: https://deckbuilder-backend.onrender.com
 - Frontend: https://deckbuilder-frontend.onrender.com
 
@@ -110,6 +112,7 @@ URLs:
 2. Registro: completa `Nombre`, `Email` y `Password`.
 3. Login: usa `Email` y `Password`.
 4. Tras autenticar, accedes a la pantalla principal.
+5. Desde la pantalla principal también puedes eliminar tu cuenta con la opción `Eliminar cuenta`.
 
 ### 2) Vista Barajas
 
@@ -136,7 +139,16 @@ Reglas aplicadas por UI/API:
 - Yu-Gi-Oh!: 3
 - Pokémon/Magic: 4
 
-### 4) Vista Mi colección
+### 4) Filtros de visualización
+
+En la vista de edición de baraja (cuando el buscador está cerrado), puedes usar el panel `Filtros de visualización` para centrarte en un tipo concreto de carta:
+
+1. Cierra el buscador de cartas si está abierto.
+2. Marca una o varias propiedades en el panel de filtros.
+3. La cuadrícula mostrará solo las cartas que coincidan con esas propiedades.
+4. Usa `Limpiar filtros` para volver a ver todas las cartas de la baraja.
+
+### 5) Vista Mi colección
 
 Desde la pestaña `Mi colección`:
 
@@ -156,6 +168,7 @@ Desde la pestaña `Mi colección`:
 - `GET /api/health/mongo` healthcheck de MongoDB.
 - `POST /api/auth/register` alta de usuario.
 - `POST /api/auth/login` login de usuario.
+- `DELETE /api/auth/me` elimina la cuenta autenticada y borra también sus barajas y cartas de colección.
 - `GET /api/cards/search?gameType={pokemon|magic|yugioh}&name={texto}` búsqueda de cartas.
 
 ### Decks
@@ -193,7 +206,7 @@ Desde la pestaña `Mi colección`:
 
 ### Cabecera obligatoria
 
-Para endpoints de usuario (`/api/decks`, `/api/user-cards`, `/api/user-cards/stats`), envía:
+Para endpoints de usuario (`/api/auth/me`, `/api/decks`, `/api/user-cards`, `/api/user-cards/stats`), envía:
 
 - `X-User-Id: <id de usuario>`
 
