@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient("external-cards", client =>
 {
     client.DefaultRequestHeaders.UserAgent.Clear();
@@ -39,6 +40,9 @@ var app = builder.Build();
 await MongoIndexInitializer.EnsureIndexesAsync(
     app.Services.GetRequiredService<IMongoClient>(),
     app.Services.GetRequiredService<IOptions<MongoDbOptions>>());
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("frontend");
 
