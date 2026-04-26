@@ -1,9 +1,9 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { createDeck, getDecks, getUserCardsStats } from '../api/client';
+import { createDeck, deleteMyAccount, getDecks, getUserCardsStats } from '../api/client';
 import { DECK_GAME_TYPE_OPTIONS, getDeckGameTypeLabel } from '../types';
 import type { AuthUser, Deck, DeckGameType, UserCardsStats } from '../types';
 import { DeckDetailScreen } from './DeckDetailScreen';
-import { FiCheck, FiChevronDown, FiLogOut, FiPlus, FiX } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiLogOut, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
 type DeckCollectionScreenProps = {
   currentUser: AuthUser;
@@ -25,6 +25,7 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
   const [openedDeckId, setOpenedDeckId] = useState<string | null>(null);
   const [collectionStats, setCollectionStats] = useState<UserCardsStats | null>(null);
   const [isCollectionStatsLoading, setIsCollectionStatsLoading] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const gameTypeMenuRef = useRef<HTMLDivElement | null>(null);
 
   const userId = currentUser.id;
@@ -183,6 +184,33 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
     setShowCreateDeckForm(false);
     setIsGameTypeMenuOpen(false);
     setDeckErrorMessage('');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!userId || isDeletingAccount) {
+      return;
+    }
+
+    const confirmed = window.confirm('Se eliminara tu cuenta junto con todas tus barajas y cartas de coleccion. Esta accion no se puede deshacer.');
+    if (!confirmed) {
+      return;
+    }
+
+    setDeckErrorMessage('');
+    setIsDeletingAccount(true);
+
+    try {
+      await deleteMyAccount(userId);
+      onLogout();
+    } catch (error) {
+      if (error instanceof Error) {
+        setDeckErrorMessage(error.message);
+      } else {
+        setDeckErrorMessage('No se pudo eliminar la cuenta.');
+      }
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   const selectedGameTypeLabel = DECK_GAME_TYPE_OPTIONS.find((option) => option.value === newDeckGameType)?.label ?? 'Selecciona un tipo';
@@ -351,17 +379,32 @@ export function DeckCollectionScreen({ currentUser, onLogout }: DeckCollectionSc
 
   return (
     <main className="app-shell deck-shell">
-      <button
-        type="button"
-        className="logout-button icon-label-button"
-        onClick={() => {
-          closeCreateDeckModal();
-          onLogout();
-        }}
-      >
-        <FiLogOut aria-hidden="true" />
-        Cerrar sesion
-      </button>
+      <div className="top-actions">
+        <button
+          type="button"
+          className="logout-button icon-label-button danger-button"
+          onClick={() => {
+            void handleDeleteAccount();
+          }}
+          disabled={isDeletingAccount}
+        >
+          <FiTrash2 aria-hidden="true" />
+          {isDeletingAccount ? 'Eliminando cuenta...' : 'Eliminar cuenta'}
+        </button>
+
+        <button
+          type="button"
+          className="logout-button icon-label-button"
+          onClick={() => {
+            closeCreateDeckModal();
+            onLogout();
+          }}
+          disabled={isDeletingAccount}
+        >
+          <FiLogOut aria-hidden="true" />
+          Cerrar sesion
+        </button>
+      </div>
 
       {selectedDeck ? (
         <DeckDetailScreen

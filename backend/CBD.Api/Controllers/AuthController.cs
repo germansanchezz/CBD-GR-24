@@ -69,4 +69,29 @@ public sealed class AuthController(IMongoClient mongoClient, IOptions<MongoDbOpt
 
         return Ok(new AuthResponse(user.Id, user.Email, user.DisplayName));
     }
+
+    [HttpDelete("me")]
+    public async Task<IActionResult> DeleteMyAccount()
+    {
+        if (!UserHeaderHelper.TryGetUserId(Request.Headers, out var userId, out var authError))
+        {
+            return authError!;
+        }
+
+        var database = mongoClient.GetDatabase(options.Value.DatabaseName);
+        var usersCollection = database.GetCollection<User>(options.Value.UsersCollectionName);
+        var decksCollection = database.GetCollection<Deck>(options.Value.DecksCollectionName);
+        var userCardsCollection = database.GetCollection<UserCard>(options.Value.UserCardsCollectionName);
+
+        var userDeleteResult = await usersCollection.DeleteOneAsync(user => user.Id == userId);
+        if (userDeleteResult.DeletedCount == 0)
+        {
+            return NotFound(new { message = "Usuario no encontrado." });
+        }
+
+        await decksCollection.DeleteManyAsync(deck => deck.OwnerUserId == userId);
+        await userCardsCollection.DeleteManyAsync(card => card.UserId == userId);
+
+        return NoContent();
+    }
 }

@@ -51,6 +51,20 @@ export async function authenticateUser(args: {
   return await response.json() as AuthUser;
 }
 
+export async function deleteMyAccount(userId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    method: 'DELETE',
+    headers: {
+      'X-User-Id': userId,
+    },
+  });
+
+  if (!response.ok) {
+    const message = await readApiErrorMessage(response, 'No se pudo eliminar la cuenta.');
+    throw new Error(message);
+  }
+}
+
 export async function getDecks(userId: string): Promise<Deck[]> {
   const response = await fetch(`${API_BASE_URL}/api/decks`, {
     headers: {
