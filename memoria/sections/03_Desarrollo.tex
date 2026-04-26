@@ -1,4 +1,4 @@
-\chapter{Desarrollo CORE}\label{cap:desarrollo}
+\chapter{Desarrollo e Implementación}\label{cap:desarrollo}
 
 \section{Implementación del núcleo funcional}
 
@@ -13,10 +13,10 @@ incremental y modular. Este enfoque, basado en el cumplimiento de hitos concreto
 uso de commits atómicos, permitió validar de manera constante cada funcionalidad antes
 de proceder a la siguiente, minimizando el riesgo de errores estructurales.
 
-\section{Desarrollo del backend y consolidación del CRUD}
+\section{Implementación del backend}
 
 En el entorno de backend, se estructuró una API bajo el entorno de .NET 8 diseñada
-para soportar operaciones transaccionales sobre las barajas de usuarios autenticados.
+para soportar operaciones sobre las barajas de usuarios autenticados.
 Durante este proceso, se priorizó la separación de responsabilidades mediante el uso
 de DTOs y validaciones independientes, lo que mejora la mantenibilidad del código y
 evita el acoplamiento entre la lógica de negocio y la capa de transporte de datos.
@@ -26,7 +26,7 @@ barajas: creación (CREATE), lectura (READ), actualización (UPDATE) y borrado (
 La lógica de actualización fue algo más compleja, ya que incluye la persistencia
 dinámica de cartas dentro de cada mazo y la implementación de reglas de dominio
 específicas, como el control de copias máximas permitidas y el tamaño total de la
-baraja.
+baraja (60 cartas en total, con límites por nombre según juego).
 
 Para garantizar la estabilidad de los datos externos se optimizó la comunicación con
 los proveedores de cartas mediante el desarrollo de un mejor cliente HTTP. Se
@@ -34,27 +34,82 @@ realizaron ajustes pequeños en los algoritmos de búsqueda para asegurar que la
 respuestas obtenidas desde fuentes como Pokémon o Magic fueran consistentes y
 estuvieran listas para su procesamiento en el servidor.
 
-\textbf{Figura 4.} Modelos de Deck y de User (C\#)
+Los extractos de código \ref{cod:dev-models-short},
+\ref{cod:dev-controller-short} y \ref{cod:dev-validator-short} muestran,
+respectivamente, un ejemplo de modelo, un endpoint de controlador y una validación de
+reglas de baraja.
 
-\textbf{Figura 5.} Ejemplo controlador (C\#)
+En el primer fragmento se observa cómo se modela una baraja en MongoDB con sus campos
+clave: nombre, tipo de juego, lista de cartas y marca temporal de actualización.
 
-\textbf{Figura 6.} Ejemplo validaciones (C\#)
+\begin{lstlisting}[language={[Sharp]C}, caption={Fragmento de modelo Deck (C\#)}, label={cod:dev-models-short}, captionpos=b]
+public sealed class Deck
+{
+    public string Name { get; set; } = string.Empty;
+    public string GameType { get; set; } = DeckGameTypes.Pokemon;
+    public List<DeckCard> Cards { get; set; } = new();
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+\end{lstlisting}
+
+El segundo fragmento resume el flujo básico del endpoint de creación: validar la
+entrada, persistir en la colección y devolver la respuesta HTTP con el recurso creado.
+
+\begin{lstlisting}[language={[Sharp]C}, caption={Fragmento de controlador para crear baraja (C\#)}, label={cod:dev-controller-short}, captionpos=b]
+[HttpPost]
+public async Task<IActionResult> CreateDeck([FromBody] CreateDeckRequest request)
+{
+    if (!DeckRequestValidator.TryValidateCreate(request, out var error))
+        return BadRequest(new { message = error });
+
+    await GetDecksCollection().InsertOneAsync(deck);
+    return Created($"/api/decks/{deck.Id}", deck);
+}
+\end{lstlisting}
+
+El tercer fragmento recoge dos de las reglas más relevantes del dominio: límite total
+de cartas por baraja y número máximo de copias por nombre.
+
+\begin{lstlisting}[language={[Sharp]C}, caption={Fragmento de validación de reglas de baraja (C\#)}, label={cod:dev-validator-short}, captionpos=b]
+if (totalCards > MaxCardsPerDeck)
+{
+    errorMessage = $"Una baraja no puede superar {MaxCardsPerDeck} cartas.";
+    return false;
+}
+
+if (copiesByName[normalizedName] > maxCopiesPerName)
+{
+    errorMessage = $"No puedes tener mas de {maxCopiesPerName} copias con el mismo nombre.";
+    return false;
+}
+\end{lstlisting}
 
 La API desarrollada sigue un diseño REST, estructurado en torno a recursos como
 usuarios, barajas y cartas. Esta organización permite una separación clara de
 responsabilidades y facilita la escalabilidad del sistema.
 
-Los endpoints implementados cubren tanto la autenticación como la gestión completa de
-barajas y la colección de cartas del usuario.
+\subsection*{Documentación de la API}
 
-\subsection*{Autenticación}
+Los endpoints implementados cubren tanto la autenticación como la gestión completa de
+barajas, la colección de cartas del usuario y la comprobación del servicio.
+
+\subsubsection*{Comprobación del servicio}
+
+\begin{itemize}
+	\item GET /: estado básico del backend.
+	\item GET /api/health/mongo: comprobación de conectividad con MongoDB.
+\end{itemize}
+
+\subsubsection*{Autenticación}
 
 \begin{itemize}
 	\item POST /api/auth/register: registro nuevos usuarios.
 	\item POST /api/auth/login: autenticación de usuarios existentes.
+	\item DELETE /api/auth/me: eliminación de la cuenta autenticada y sus datos
+	asociados.
 \end{itemize}
 
-\subsection*{Gestión de barajas (Decks)}
+\subsubsection*{Gestión de barajas (Decks)}
 
 \begin{itemize}
 	\item GET /api/decks: obtención de todas las barajas del usuario autenticado.
@@ -65,23 +120,23 @@ barajas y la colección de cartas del usuario.
 	\item DELETE /api/decks/\{deckId\}: eliminación de una baraja.
 \end{itemize}
 
-\subsection*{Gestión de colección de cartas (User Cards)}
+\subsubsection*{Búsqueda de cartas}
 
 \begin{itemize}
-	\item GET /api/user-cards: obtención de colección de cartas del usuario
-	(README, detalles).
-	\item GET /api/user-cards/stats: obtención de estadísticas de colección
-	(README, detalles).
+	\item GET /api/cards/search: búsqueda de cartas en fuentes externas.
+\end{itemize}
+
+\subsubsection*{Gestión de colección de cartas (User Cards)}
+
+\begin{itemize}
+	\item GET /api/user-cards: obtención de la colección de cartas del usuario,
+	con filtros opcionales.
+	\item GET /api/user-cards/stats: obtención de estadísticas de colección,
+	con posibilidad de filtrar por juego.
 	\item POST /api/user-cards: inserción de nuevas cartas en colección.
 	\item POST /api/user-cards/\{userCardId\}/quantity: ajuste incremental de copias
 	carta.
-	\item DELETE /api/user-cards/\{userCardId\}: eliminación carta de colección.
-\end{itemize}
-
-\subsection*{Búsqueda de cartas}
-
-\begin{itemize}
-	\item GET /api/cards/search: búsqueda de cartas fuentes externas.
+	\item DELETE /api/user-cards/\{userCardId\}: eliminación de carta de colección.
 \end{itemize}
 
 Este conjunto de endpoints constituye la base del sistema CRUD ampliado, no solo
@@ -92,7 +147,7 @@ Su funcionamiento detallado y configuración se encuentran descritos en el archi
 README del repositorio, donde se abordan aspectos como la lógica de interacción,
 validaciones y comunicación con la base de datos.
 
-\section{Desarrollo del frontend y flujo operativo real}
+\section{Implementación del frontend y flujo operativo}
 
 Paralelamente, el desarrollo de la interfaz de usuario evolucionó desde prototipos
 estáticos hacia un flujo operativo completo y dinámico. Se implementó un sistema de
@@ -112,23 +167,45 @@ definitivo de barajas y se aplicaron técnicas de diseño responsive. Estas mejo
 aseguran que la experiencia de usuario sea óptima y visualmente coherente en una
 amplia variedad de dispositivos.
 
-\textbf{Figura 7.} Pantalla de Login/Registro
+Las principales pantallas del frontend pueden verse en la Figura
+\ref{fig:dev-frontend-lista-barajas}, la Figura
+\ref{fig:dev-frontend-mi-coleccion}, la Figura
+\ref{fig:dev-frontend-detalles-baraja} y la Figura
+\ref{fig:dev-frontend-buscador}.
 
-\textbf{Figura 8.} Pantalla de Colección de barajas
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/lista-barajas.png}
+	\caption{Pantalla de colección de barajas}
+	\label{fig:dev-frontend-lista-barajas}
+\end{figure}
 
-\textbf{Figura 9.} Pantalla de Mi colección
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/mi-coleccion.png}
+	\caption{Pantalla de Mi colección}
+	\label{fig:dev-frontend-mi-coleccion}
+\end{figure}
 
-\textbf{Figura 10.} Pantalla de Crear nueva baraja
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/detalles-baraja.png}
+	\caption{Pantalla de detalle y edición de baraja}
+	\label{fig:dev-frontend-detalles-baraja}
+\end{figure}
 
-\textbf{Figura 11.} Pantalla de Mi baraja
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/buscador.png}
+	\caption{Pantalla de buscador de cartas}
+	\label{fig:dev-frontend-buscador}
+\end{figure}
 
-\textbf{Figura 12.} Pantalla de Buscador de cartas
-
-\section{Capacidades multijuego y editor visual de baraja}
+\section{Capacidades multijuego y editor visual}
 
 Una de las partes más relevantes de esta fase fue la transformación de la plataforma
 en una solución multijuego auténtica. Se integra el tipo de juego (Pokémon, Magic o
-Yu-GI-Oh!) como un atributo estructural dentro de la base de datos de MongoDB,
+Yu-Gi-Oh!) como un atributo estructural dentro de la base de datos de MongoDB,
 permitiendo que el sistema se adapte dinámicamente según la elección del usuario al
 crear una nueva baraja.
 
@@ -143,7 +220,26 @@ controles directos, mientras el sistema aplica automáticamente las reglas de va
 específicas de cada juego dentro de la lógica de actualización, garantizando que el
 mazo resultante sea legal dentro de cada uno de los juegos.
 
-\textbf{Figura 13.} Atributo GameType (MongoDB)
+El extracto \ref{cod:dev-multijuego-busqueda} resume la base de la implementación
+multijuego: definir tipos de juego normalizados y seleccionar el proveedor de búsqueda
+en función del valor recibido.
+
+\begin{lstlisting}[language={[Sharp]C}, caption={DeckGameTypes simplificado y selección de proveedor (C\#)}, label={cod:dev-multijuego-busqueda}, captionpos=b]
+public static class DeckGameTypes
+{
+    public const string Pokemon = "pokemon";
+    public const string Magic = "magic";
+    public const string Yugioh = "yugioh";
+}
+
+var cards = normalizedGameType switch
+{
+    DeckGameTypes.Pokemon => await SearchPokemonCardsAsync(httpClient, query, cancellationToken),
+    DeckGameTypes.Magic => await SearchMagicCardsAsync(httpClient, query, cancellationToken),
+    DeckGameTypes.Yugioh => await SearchYugiohCardsAsync(httpClient, query, cancellationToken),
+    _ => []
+};
+\end{lstlisting}
 
 \section{Resultados de la fase}
 

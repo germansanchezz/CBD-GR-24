@@ -14,6 +14,11 @@ personalizadas era la idea con más sentido para implementar el CRUD completo qu
 nos pedía. La visión era crear una base sólida que permitiera, en las siguientes
 fases, mejorar la lógica interna de validación de reglas.
 
+Para mantener un alcance realista, se definió un núcleo funcional mínimo: registro e
+inicio de sesión de usuarios, creación y edición de barajas, búsqueda de cartas en
+fuentes externas y persistencia de la información en MongoDB. Con este enfoque,
+evitamos dispersarnos en funcionalidades secundarias y priorizamos una base estable.
+
 \section{Análisis del Flujo de Usuario y Casos de Uso}
 
 Para que la aplicación sea operativa, se definió un flujo de usuario lineal y lógico
@@ -25,18 +30,21 @@ los siguientes pasos:
 	que permite vincular sus barajas personalizadas a su perfil único almacenado en
 	MongoDB.
 	\item \textbf{Consulta y Descubrimiento:} El usuario utiliza el buscador. Este
-	componente realiza peticiones a la API externa de tcgdex.dev, devolviendo el
-	listado de cartas candidatas.
+	componente realiza peticiones a APIs externas (TCGdex, Scryfall y YGOPRODeck),
+	devolviendo el listado de cartas candidatas según el juego seleccionado.
 	\item \textbf{Persistencia en Colección:} Una vez seleccionada una carta, el
 	sistema CRUD realiza una operación de creación (CREATE) para guardar la referencia
 	y los metadatos específicos.
 	\item \textbf{Construcción de Barajas:} El usuario crea un contenedor
 	``Baraja'' donde añade y retira cartas. Aquí se aplica la lógica de edición
 	(UPDATE) para modificar cantidades o estados.
-	\item \textbf{Ver y Eliminar:} El usuario puede ver sus barajas, lo que sería la
-	funcionalidad de (READ), y podría, si quisiera, eliminarlas con la operación de
-	(DELETE).
+	\item \textbf{Ver y Eliminar:} El usuario puede consultar sus barajas
+	(funcionalidad READ) y eliminarlas cuando ya no las necesite (funcionalidad
+	DELETE).
 \end{itemize}
+
+Este flujo fue útil para decidir el orden de implementación y validar que todas las
+operaciones CRUD quedaban cubiertas de principio a fin.
 
 \section{Diseño de la Arquitectura de Datos en MongoDB}
 
@@ -45,18 +53,43 @@ relacionales, el diseño de la arquitectura fue un punto clave. A diferencia de 
 modelo SQL rígido, optamos por un esquema basado en documentos BSON, lo que permite
 una flexibilidad total en los atributos.
 
-\textbf{Figura 1.} Modelo datos User (MongoDB)
+Durante esta fase se definieron tres colecciones principales: usuarios
+(\texttt{users}), barajas (\texttt{decks}) y cartas del usuario
+(\texttt{user\_cards}). Esta separación simplifica la lógica de acceso a datos y
+permite evolucionar cada parte de forma independiente.
 
-\textbf{Figura 2.} Modelo datos Deck (MongoDB)
+Como se muestra en la Figura \ref{fig:plan-modelo-user}, la colección de usuarios
+centraliza la información de autenticación. La estructura de barajas se detalla en la Figura
+\ref{fig:plan-modelo-deck}, y el modelo de cartas asociadas al usuario se recoge en
+la Figura \ref{fig:plan-modelo-user-card}.
 
-\textbf{Figura 3.} Modelo datos User\_Card (MongoDB)
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.85\textwidth]{figures/plan-modelo-user.png}
+	\caption{Modelo de datos de la colección User en MongoDB}
+	\label{fig:plan-modelo-user}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.85\textwidth]{figures/plan-modelo-deck.png}
+	\caption{Modelo de datos de la colección Deck en MongoDB}
+	\label{fig:plan-modelo-deck}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.85\textwidth]{figures/plan-modelo-user-card.png}
+	\caption{Modelo de datos de la colección User\_Card en MongoDB}
+	\label{fig:plan-modelo-user-card}
+\end{figure}
 
 \section{Stack Tecnológico}
 
 El requisito principal del proyecto era construir una API REST que permitiese trabajar
 con una base de datos NoSQL en MongoDB. Para este proyecto en concreto, teníamos la
 restricción de que la tecnología a utilizar debía ser C\#, por lo que construimos el
-backend en .NET 8. Este se encarga de la lógica de negocio y exponer la API.
+backend en .NET 8. Este se encarga de la lógica de negocio y de exponer la API.
 
 Por otro lado, para ampliar el alcance inicial, se decidió incluir una capa frontend
 mediante React + Vite + TypeScript, con el objetivo de facilitar el uso de la API de
@@ -72,15 +105,13 @@ En cuanto a infraestructura, el proyecto se desplegó en servicios cloud:
 De esta forma, la solución mantiene el núcleo requerido (MongoDB + C\#) y añade una
 arquitectura web completa, preparada para uso real y validación en producción.
 
-\section{Resultado de la fase}
+\section{Resultados de la fase}
 
 La fase de planificación y diseño ha permitido establecer una base sólida para el
-desarrollo del proyecto. Durante esta etapa se han definido claramente los objetivos
-del sistema, el alcance funcional y el flujo de usuario, asegurando que la aplicación
-cubra las necesidades principales de gestión de barajas.
+desarrollo del proyecto. Durante esta etapa se han definido con claridad los objetivos
+del sistema, el alcance funcional y el flujo de usuario.
 
-Como resultado de esta fase, se ha obtenido una visión clara del funcionamiento global
-del sistema, incluyendo la interacción entre usuario, aplicación y fuentes externas de
-datos. Además, ha quedado definido el stack tecnológico. Esto ha facilitado la
-transición hacia la fase de desarrollo, donde se ha podido implementar el sistema de
-manera más eficiente y con menor riesgo de errores estructurales.
+Como resultado, se obtuvo una visión global del funcionamiento de la aplicación,
+incluyendo la interacción entre usuario, frontend, backend y fuentes externas de
+datos. También quedó definido el stack tecnológico, lo que facilitó la transición a
+la fase de desarrollo con menor riesgo de errores estructurales.
