@@ -12,7 +12,7 @@ Para que la aplicación fuera operativa, tuvimos que pensar en un flujo de usuar
 
 \begin{itemize}
     \item \textbf{Identificación y Autenticación:} El usuario accede al sistema, lo que permite vincular sus barajas personalizadas a su perfil único almacenado en MongoDB.
-    \item \textbf{Consulta y Descubrimiento:} El usuario utiliza el buscador. Este componente realiza peticiones a la API externa de tcgdex.dev, devolviendo el listado de cartas candidatas.
+    \item \textbf{Consulta y Descubrimiento:} El usuario utiliza el buscador. Este componente realiza peticiones a la API externa de tcgdex.dev \cite{tcgdexApi}, devolviendo el listado de cartas candidatas.
     \item \textbf{Persistencia en Colección:} Una vez seleccionada una carta, el sistema CRUD realiza una operación de creación (CREATE) para guardar la referencia y los metadatos específicos.
     \item \textbf{Construcción de Barajas:} El usuario crea un contenedor ``Baraja'' donde añade y retira cartas. Aquí se aplica la lógica de edición (UPDATE) para modificar cantidades o estados.
     \item \textbf{Ver y Eliminar:} El usuario puede ver sus barajas lo que sería la funcionalidad de (READ) y podría si quisiera eliminarla con la operación de (DELETE).
@@ -21,6 +21,8 @@ Para que la aplicación fuera operativa, tuvimos que pensar en un flujo de usuar
 \section{Diseño de la Arquitectura de Datos en MongoDB}
 
 Debido a nuestro interés como equipo en las bases de datos no relacionales, seleccionamos la tecnología de MongoDB, lo que implicó que la arquitectura fuera un punto clave de la planificación. A diferencia de los modelos SQL, optamos por un esquema basado en documentos, que nos permite una total flexibilidad con los atributos.
+
+Los modelos de datos definidos se muestran en las Figuras \ref{fig:plan-modelo-user}, \ref{fig:plan-modelo-deck} y \ref{fig:plan-modelo-user-card}.
 
 \begin{figure}[H]
 	\centering
@@ -52,8 +54,8 @@ Por otro lado, se decidió incluir un frontend mediante React + Vite + TypeScrip
 En cuanto a infraestructura, el proyecto se desplegó en servicios cloud:
 
 \begin{itemize}
-    \item Render para backend y frontend.
-    \item MongoDB Atlas para alojar la base de datos en entorno gestionado.
+    \item Render para backend y frontend \cite{renderDocs}.
+    \item MongoDB Atlas para alojar la base de datos en entorno gestionado \cite{mongoAtlasDocs}.
 \end{itemize}
 
 Por tanto la aplicación mantiene el núcleo requerido en MongoDB y C\#, añadiendo una arquitectura web completa que queda preparada para su uso en un entorno real de producción.

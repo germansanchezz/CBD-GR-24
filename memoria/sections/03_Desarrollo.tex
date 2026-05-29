@@ -14,6 +14,8 @@ Sobre este sistema creamos un sistema CRUD completo para la entidad de barajas: 
 
 Para garantizar que los datos externos que se utilizan fueran estables, mejoramos las peticiones con los proveedores de cartas mediante el desarrollo de un mejor cliente HTTP. Realizamos pequeños ajustes en los algoritmos de búsqueda para asegurar que las respuestas obtenidas desde las distintas fuentes fueran consistentes y estuvieran listas para ser usadas y procesadas.
 
+Los ejemplos de modelos, controlador y validaciones se muestran en los Listados \ref{cod:dev-models-short}, \ref{cod:dev-controller-short} y \ref{cod:dev-validator-short}.
+
 \begin{lstlisting}[language={[Sharp]C}, caption={Modelos de Deck y de User (C\#)}, label={cod:dev-models-short}, captionpos=b]
 public sealed class Deck
 {
@@ -84,7 +86,7 @@ Los endpoints implementados cubren tanto la autenticación como la gestión comp
 \subsection*{Búsqueda de cartas}
 
 \begin{itemize}
-    \item GET api/cards/search: búsqueda de cartas fuentes externas
+    \item GET api/cards/search: búsqueda de cartas fuentes externas \cite{tcgdexApi,scryfallApi,ygoprodeckApi}
 \end{itemize}
 
 Este conjunto de endpoints forma la base del sistema CRUD, no solo sobre barajas sino también sobre la colección personal del usuario. Los endpoints de estadísticas y búsquedas externas aportan un valor añadido al sistema. 
@@ -98,6 +100,15 @@ Mientras trabajabamos en el backend, también estuvimos desarrollando la interfa
 Una vez completamos la validación de acceso, comenzamos a desarrollar las pantallas de colección y de detalle para cada barajas. Estas interfaces permiten a los usuarios interactuar en tiempo real con todo su contenido, editando su mazo y persistiendo con los cambios de forma inmediata con la API. Este avance en el proyecto supuso una refactorización del cliente por algunas áreas de responsabilidad para luego facilitar la escalabilidad futura.
 
 Para finalizar el desarrollo de la interfaz, añadimos la funcionalidad de borrado definitivo de barajas y se añadieron diseños responsive a la aplicación. Estas mejoras ayudan a que la experiencia del usuario fuera la mejor posible.
+
+Las pantallas principales de la interfaz se muestran en las Figuras \ref{fig:dev-frontend-login}, \ref{fig:dev-frontend-lista-barajas}, \ref{fig:dev-frontend-mi-coleccion}, \ref{fig:dev-frontend-detalles-baraja} y \ref{fig:dev-frontend-buscador}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/login.png}
+	\caption{Pantalla de Login/Registro}
+	\label{fig:dev-frontend-login}
+\end{figure}
 
 \begin{figure}[H]
 	\centering
@@ -131,9 +142,11 @@ Para finalizar el desarrollo de la interfaz, añadimos la funcionalidad de borra
 
 Una de las partes más importantes fue transformar la plataforma en un sistema capaz de integrar barajas procedentes de diferentes juegos. En la aplicación hemos integrado el tipo de juego ``gametype'' (Pokémon, Magic o Yu-Gi-Oh!) como un atributo dentro de la base de datos de MongoDB, permitiendo que el sistema se adapte a lo que el usuario seleccione cuando cree una nueva baraja.
 
-Gracias a este diseño multijuego pudimos desarrollar un endpoint de búsqueda unificado capaz de consultar en múltiples fuentes externas. Con esta implementación permitimos que el usuario pueda buscar las cartas de cada una de las franquicias utilizando el mismo buscador, simplificando así la complejidad.
+Gracias a este diseño multijuego pudimos desarrollar un endpoint de búsqueda unificado capaz de consultar en múltiples fuentes externas \cite{tcgdexApi,scryfallApi,ygoprodeckApi}. Con esta implementación permitimos que el usuario pueda buscar las cartas de cada una de las franquicias utilizando el mismo buscador, simplificando así la complejidad.
 
 Para finalizar, construimos el editor de barajas. Esta herramienta permite que los usuarios añadan o retiren cartas mediantes controles directos, mientras el sistema se encarga de forma automática de las reglas de validación de cada uno de los juegos, garantizado que el mazo resultante sea legal dentro de cada uno de los juegos.
+
+El atributo GameType se muestra en el Listado \ref{cod:dev-multijuego-busqueda}.
 
 \begin{lstlisting}[language={[Sharp]C}, caption={Atributo GameType (MongoDB)}, label={cod:dev-multijuego-busqueda}, captionpos=b]
 public static class DeckGameTypes
