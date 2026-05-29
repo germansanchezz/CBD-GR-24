@@ -1,117 +1,65 @@
-\chapter{Planificación y Diseño}\label{cap:planificacion}
+\chapter{Fase 1: Planificación y Diseño}\label{cap:planificacion}
 
 \section{Ideas y Alcance}
 
-Esta fase inicial fue determinante para establecer los cimientos de este proyecto. El
-primer hito fue una reunión inicial de definición de alcance donde se determinó que,
-para que el sistema fuera útil, debía ser capaz de manejar distintos juegos de cartas
-sin reestructurar la base de datos para cada franquicia.
+En esta primera fase dejamos establecidas las bases del proyecto. Lo primero que hicimos, fue tener una reunión inicial donde definimos el alcance, mediante este, determinamos que para que el sistema fuera útil, debía ser capaz de manejar varios juegos de cartas distintos sin tener que cambiar la base de datos para cada una de las franquicias.
 
-Durante la reunión, contemplamos diversas formas de orientar el proyecto sobre la
-base de las tecnologías escogidas. Tras analizar cómo usar APIs externas para la
-extracción de cartas, llegamos a la conclusión de que la creación de barajas
-personalizadas era la idea con más sentido para implementar el CRUD completo que se
-nos pedía. La visión era crear una base sólida que permitiera, en las siguientes
-fases, mejorar la lógica interna de validación de reglas.
-
-Para mantener un alcance realista, se definió un núcleo funcional mínimo: registro e
-inicio de sesión de usuarios, creación y edición de barajas, búsqueda de cartas en
-fuentes externas y persistencia de la información en MongoDB. Con este enfoque,
-evitamos dispersarnos en funcionalidades secundarias y priorizamos una base estable.
+Durante esta primera reunión, contemplamos diversas formas en las que podíamos orientar el proyecto con las tecnologías que habíamos escogido. Tras verificar que podíamos usar APIs externas para la extracción de las cartas, llegamos a la idea de que poder crear barajas personalizadas era lo que más sentido tenía para implementar el CRUD completo que se nos requería.
 
 \section{Análisis del Flujo de Usuario y Casos de Uso}
 
-Para que la aplicación sea operativa, se definió un flujo de usuario lineal y lógico
-que maximiza la eficiencia en la gestión de colecciones. Este flujo se documentó bajo
-los siguientes pasos:
+Para que la aplicación fuera operativa, tuvimos que pensar en un flujo de usuario completo y lógico que proporciona valor y fuera útil para los usuarios, este flujo se documentó con los siguiente pasos:
 
 \begin{itemize}
-	\item \textbf{Identificación y Autenticación:} El usuario accede al sistema, lo
-	que permite vincular sus barajas personalizadas a su perfil único almacenado en
-	MongoDB.
-	\item \textbf{Consulta y Descubrimiento:} El usuario utiliza el buscador. Este
-	componente realiza peticiones a APIs externas (TCGdex, Scryfall y YGOPRODeck),
-	devolviendo el listado de cartas candidatas según el juego seleccionado.
-	\item \textbf{Persistencia en Colección:} Una vez seleccionada una carta, el
-	sistema CRUD realiza una operación de creación (CREATE) para guardar la referencia
-	y los metadatos específicos.
-	\item \textbf{Construcción de Barajas:} El usuario crea un contenedor
-	``Baraja'' donde añade y retira cartas. Aquí se aplica la lógica de edición
-	(UPDATE) para modificar cantidades o estados.
-	\item \textbf{Ver y Eliminar:} El usuario puede consultar sus barajas
-	(funcionalidad READ) y eliminarlas cuando ya no las necesite (funcionalidad
-	DELETE).
+    \item \textbf{Identificación y Autenticación:} El usuario accede al sistema, lo que permite vincular sus barajas personalizadas a su perfil único almacenado en MongoDB.
+    \item \textbf{Consulta y Descubrimiento:} El usuario utiliza el buscador. Este componente realiza peticiones a la API externa de tcgdex.dev, devolviendo el listado de cartas candidatas.
+    \item \textbf{Persistencia en Colección:} Una vez seleccionada una carta, el sistema CRUD realiza una operación de creación (CREATE) para guardar la referencia y los metadatos específicos.
+    \item \textbf{Construcción de Barajas:} El usuario crea un contenedor ``Baraja'' donde añade y retira cartas. Aquí se aplica la lógica de edición (UPDATE) para modificar cantidades o estados.
+    \item \textbf{Ver y Eliminar:} El usuario puede ver sus barajas lo que sería la funcionalidad de (READ) y podría si quisiera eliminarla con la operación de (DELETE).
 \end{itemize}
-
-Este flujo fue útil para decidir el orden de implementación y validar que todas las
-operaciones CRUD quedaban cubiertas de principio a fin.
 
 \section{Diseño de la Arquitectura de Datos en MongoDB}
 
-Al haber seleccionado MongoDB por el interés del equipo en las bases de datos no
-relacionales, el diseño de la arquitectura fue un punto clave. A diferencia de un
-modelo SQL rígido, optamos por un esquema basado en documentos BSON, lo que permite
-una flexibilidad total en los atributos.
-
-Durante esta fase se definieron tres colecciones principales: usuarios
-(\texttt{users}), barajas (\texttt{decks}) y cartas del usuario
-(\texttt{user\_cards}). Esta separación simplifica la lógica de acceso a datos y
-permite evolucionar cada parte de forma independiente.
-
-Como se muestra en la Figura \ref{fig:plan-modelo-user}, la colección de usuarios
-centraliza la información de autenticación. La estructura de barajas se detalla en la Figura
-\ref{fig:plan-modelo-deck}, y el modelo de cartas asociadas al usuario se recoge en
-la Figura \ref{fig:plan-modelo-user-card}.
+Debido a nuestro interés como equipo en las bases de datos no relacionales, seleccionamos la tecnología de MongoDB, lo que implicó que la arquitectura fuera un punto clave de la planificación. A diferencia de los modelos SQL, optamos por un esquema basado en documentos, que nos permite una total flexibilidad con los atributos.
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.85\textwidth]{figures/plan-modelo-user.png}
-	\caption{Modelo de datos de la colección User en MongoDB}
+	\caption{Modelo datos User (MongoDB)}
 	\label{fig:plan-modelo-user}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.85\textwidth]{figures/plan-modelo-deck.png}
-	\caption{Modelo de datos de la colección Deck en MongoDB}
+	\caption{Modelo datos Deck (MongoDB)}
 	\label{fig:plan-modelo-deck}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.85\textwidth]{figures/plan-modelo-user-card.png}
-	\caption{Modelo de datos de la colección User\_Card en MongoDB}
+	\caption{Modelo datos User\_Card (MongoDB)}
 	\label{fig:plan-modelo-user-card}
 \end{figure}
 
 \section{Stack Tecnológico}
 
-El requisito principal del proyecto era construir una API REST que permitiese trabajar
-con una base de datos NoSQL en MongoDB. Para este proyecto en concreto, teníamos la
-restricción de que la tecnología a utilizar debía ser C\#, por lo que construimos el
-backend en .NET 8. Este se encarga de la lógica de negocio y de exponer la API.
+El requisito principal del proyecto era construir una API REST que permitiese trabajar con una base de datos NoSQL en MongoDB. Para este proyecto en concreto, teníamos la restricción de que la tecnología a utilizar debía ser C\#, por lo que construimos el backend en .NET 8. Este se encarga de la lógica de negocio y exponer la API. 
 
-Por otro lado, para ampliar el alcance inicial, se decidió incluir una capa frontend
-mediante React + Vite + TypeScript, con el objetivo de facilitar el uso de la API de
-cara a los usuarios.
+Por otro lado, se decidió incluir un frontend mediante React + Vite + TypeScript. Aunque no era requisito obligatorio, pensamos que facilitaría en gran medida la interacción de los usuarios con la API.
 
 En cuanto a infraestructura, el proyecto se desplegó en servicios cloud:
 
 \begin{itemize}
-	\item Render para backend y frontend.
-	\item MongoDB Atlas para alojar la base de datos en entorno gestionado.
+    \item Render para backend y frontend.
+    \item MongoDB Atlas para alojar la base de datos en entorno gestionado.
 \end{itemize}
 
-De esta forma, la solución mantiene el núcleo requerido (MongoDB + C\#) y añade una
-arquitectura web completa, preparada para uso real y validación en producción.
+Por tanto la aplicación mantiene el núcleo requerido en MongoDB y C\#, añadiendo una arquitectura web completa que queda preparada para su uso en un entorno real de producción.
 
-\section{Resultados de la fase}
+\section{Resultado de la fase}
 
-La fase de planificación y diseño ha permitido establecer una base sólida para el
-desarrollo del proyecto. Durante esta etapa se han definido con claridad los objetivos
-del sistema, el alcance funcional y el flujo de usuario.
+En esta fase hemos podido establecer una buena base para comenzar el desarrollo de las funcionalidades del proyecto. Durante esta etapa han quedado definidos de forma clara los objetivos del sistema, el alcance y el flujo de usuario, asegurándonos de esta forma que la aplicación cubre todas las necesidades esenciales.
 
-Como resultado, se obtuvo una visión global del funcionamiento de la aplicación,
-incluyendo la interacción entre usuario, frontend, backend y fuentes externas de
-datos. También quedó definido el stack tecnológico, lo que facilitó la transición a
-la fase de desarrollo con menor riesgo de errores estructurales.
+Como resultado de esta fase, hemos obtenido una visión clara del funcionamiento que queremos para el sistema, incluyendo la interacción entre el usuario, con la aplicación y con las fuentes externas de datos. Además, se ha quedado definido el stack tecnológico. Esto nos ha facilitado la transición a la fase de desarrollo, donde hemos podido implementar el sistema de una manera más eficiente y con menor riesgo de errores en la estructura.
