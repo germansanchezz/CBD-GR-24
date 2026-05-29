@@ -1,31 +1,17 @@
 \chapter{Introducción}\label{cap:introduccion}
 
-En los últimos años ha crecido notablemente la popularidad de los juegos de cartas 
-coleccionables (TCG) como Pokémon, Magic: The Gathering y Yu-Gi-Oh! Esto ha generado 
-una demanda creciente de herramientas digitales para la gestión de inventarios y la 
-construcción de barajas competitivas. En este contexto, este trabajo describe el 
-diseño e implementación de DeckBuilder, una aplicación orientada a centralizar y 
-optimizar la experiencia del coleccionista.
+En los últimos años se ha podido observar un notable crecimiento en la popularidad de los juegos de cartas coleccionables (TCG) como pueden ser Pokémon, Magic: The Gathering y Yu-Gi-Oh! Por esto surge la necesidad de usar una herramienta centralizada que permite la construcción de mazos y gestión de inventario. Este trabajo describe el diseño e implementación de DeckBuilder, una aplicación que busca facilitar e integrar las tareas de los coleccionistas.
 
-El núcleo técnico de este proyecto consiste en el desarrollo de un sistema CRUD 
-(Create, Read, Update, Delete) robusto, implementado en C\# sobre el entorno .NET 8 
-y utilizando MongoDB como motor de base de datos. La elección de estas tecnologías 
-responde a la necesidad de gestionar datos heterogéneos, con estructuras y atributos 
-variables según el juego.
+El proyecto consiste en el desarrollo de una API REST que permita operaciones CRUD (Create, Read, Update, Delete) sobre barajas e inventarios de cartas, implementado en C\# mediante .NET 8 y usando MongoDB como base de datos. La elección de estas tecnologías, más en concreto de MongoDB, permite gestionar datos heterogéneos con estructuras y atributos variables, lo que encaja perfectamente con nuestra propuesta multijuego.
 
-El objetivo principal es ofrecer una plataforma que no solo permita registrar cartas, 
-sino también validar las reglas específicas de cada juego, integrando datos reales 
-obtenidos a través de APIs públicas como TCGdex \cite{tcgdexApi}, Scryfall 
-\cite{scryfallApi} y YGOPRODeck \cite{ygoprodeckApi} para mejorar la precisión de la 
-información. De este modo, se busca reducir el problema de navegar entre múltiples 
-aplicaciones para gestionar las colecciones de diferentes franquicias.
+El objetivo principal del proyecto es construir una aplicación capaz registrar cartas obtenidas a través de APIs externas dedicadas, de forma que se garantice lo máximo posible la precisión de la información. De este modo, se busca resolver la necesidad de usar múltiples aplicaciones para gestionar las colecciones de distintas franquicias.
 
-La metodología de trabajo se estructuró en tres fases: planificación y diseño, 
-desarrollo del sistema y, finalmente, la consolidación técnica y documentación del 
-sistema. Este enfoque iterativo ha permitido abordar el proyecto de forma progresiva 
-y segura, asegurando el cumplimiento de los requisitos en cada etapa.
+El proyecto se estructura en tres fases:
 
-Como resultado, se ha obtenido una aplicación funcional que destaca por su capacidad 
-de adaptarse a distintos esquemas de datos gracias al uso de bases de datos documentales. 
-Además, el proyecto se desplegó en Render y se conectó a una base de datos en MongoDB 
-Atlas, lo que permitió validar su funcionamiento en un entorno real \cite{renderDocs, mongoAtlasDocs}.
+\begin{enumerate}
+    \item Planificación y Diseño
+    \item Desarrollo e implementación
+    \item Documentación y Presentación
+\end{enumerate}
+
+Como resultado, se ha obtenido una aplicación funcional que destaca por su capacidad de adaptarse a distintos esquemas de datos gracias al uso de bases de datos documentales.
